@@ -9,14 +9,35 @@ Hallucination Puzzle" by Mohit Aggarwal.
 
 ## Setup
 
+The default path uses Qdrant's embedded local mode with persisted storage. It does
+not require Docker:
+
 ```bash
 uv sync
-docker compose up -d      # starts a local Qdrant instance with persistent storage
-cp .env.example .env      # fill in OPENAI_API_KEY; QDRANT_URL/API_KEY default to local
+cp .env.example .env
+uv run python qdrant_high_fidelity/run.py
 ```
 
-To use Qdrant Cloud instead of local Docker, replace `QDRANT_URL` and `QDRANT_API_KEY`
-in `.env` with your cluster's values. No code changes are required.
+Embedded local storage is written to `.qdrant_local/`. This project deliberately
+does not use Qdrant's `:memory:` mode, because an in-memory collection disappears
+when the process stops.
+
+### Optional Docker server
+
+Use Docker when you want Qdrant as a separate local service or want its Web UI:
+
+```bash
+docker compose up -d
+```
+
+Then set `QDRANT_URL=http://localhost:6333` in `.env`. Docker persists data through
+the `qdrant_storage/` volume.
+
+### Optional Qdrant Cloud
+
+Set `QDRANT_URL` and `QDRANT_API_KEY` in `.env` to your Qdrant Cloud cluster
+credentials. The retrieval code uses the same interface for embedded local,
+Docker-hosted, and Cloud Qdrant; only the environment values change.
 
 ## Structure
 
