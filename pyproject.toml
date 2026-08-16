@@ -1,0 +1,20 @@
+[project]
+name = "ch03-taming-hallucination-puzzle"
+version = "0.1.0"
+description = "Chapter 3 source repo: retrieval design, semantic matching, and hybrid search for taming RAG hallucinations"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "qdrant-client>=1.9.0",
+    "FlagEmbedding>=1.2.10",
+    "sentence-transformers>=3.0.0",
+    "rank-bm25>=0.2.2",
+    "python-dotenv>=1.0.1",
+    "pandas>=2.2.0",
+    "openai>=1.30.0",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0.0",
+]
