@@ -1,9 +1,7 @@
 .venv/
 __pycache__/
-*.pyc
-.env
-.DS_Store
-qdrant_storage/
-.qdrant_local/
-*.egg-info/
+*.py[cod]
 .pytest_cache/
+.env
+.qdrant_local/
+sample_data/generated_large/
