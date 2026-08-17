@@ -6,29 +6,59 @@ Companion article: *"Fact-Checking the Future: How BGE-M3 is Taming the RAG Hall
 
 ---
 
-## Setup
+## How to Navigate This Repository
 
-### 1. Base Environment (Ollama / OpenAI / BM25 / Embedded Qdrant)
-```bash
-uv sync
-cp .env.example .env
-```
-
-### 2. Full Local BGE-M3 Environment (Native Sparse + ColBERT Reranking)
-```bash
-uv sync --extra local-bge-m3
-```
+This repository is organized progressively so you can explore the concepts at whichever level of detail you prefer:
+- **Global Overview (This File)**: Getting started, setup paths, execution order, and chapter summary.
+- **Stage Guides**: Each stage folder (`naive_baseline/`, `semantic_bridging_bge_m3/`, `hybrid_retrieval/`, `qdrant_high_fidelity/`) contains a dedicated README focusing on that specific retrieval mechanism.
+- **Architecture Diagrams**: [**`docs/workflow.md`**](docs/workflow.md) contains 7 visual flowcharts illustrating the lifecycle and algorithms.
+- **Consolidated Results**: [**`results/benchmark_results.md`**](results/benchmark_results.md) contains the authoritative evaluation metrics across all stages and failure modes.
 
 ---
 
-## Qdrant Deployment Modes
+## Setup Guide (Simple to Advanced)
 
-Embedded local persistent storage is the default and requires no Docker daemon:
-- **Embedded Local (Default)**: Persisted in `./.qdrant_local/`. Deliberately avoids ephemeral in-memory storage (`:memory:`).
-- **Docker Server (Optional)**: Run `docker compose up -d` and set `QDRANT_URL=http://localhost:6333` in `.env` to use Docker with the Qdrant Web UI.
-- **Qdrant Cloud**: Set `QDRANT_URL` and `QDRANT_API_KEY` in `.env`.
+Choose the setup path that matches your environment:
 
-Application code connects through a single unified abstraction in `qdrant_high_fidelity/client.py`.
+### Path 1: Quickstart (Recommended / Zero-Configuration)
+Best for getting started immediately. Uses local Ollama or OpenAI with embedded persistent Qdrant (no Docker or heavy model downloads required).
+
+```bash
+# 1. Install lightweight base dependencies
+uv sync
+
+# 2. Configure environment (defaults to Ollama bge-m3 and embedded Qdrant)
+cp .env.example .env
+
+# 3. (If using Ollama locally) Pull the dense embedding model
+ollama pull bge-m3
+```
+
+With this base environment, you can run Stage 3.1 (Naive Baseline), Stage 3.3 (BM25 + Dense Hybrid), and Stage 3.4 (Embedded Qdrant).
+
+---
+
+### Path 2: Full Local BGE-M3 (Sparse Lexical + ColBERT Reranking)
+Required if you want to run Stage 3.2 (BGE-M3 multi-vector representation) or Stage 3.4 with second-stage ColBERT token reranking.
+
+```bash
+# Install local FlagEmbedding and PyTorch dependencies
+uv sync --extra local-bge-m3
+```
+*Note: The first run will download the 2.27 GB BAAI/bge-m3 weights locally.*
+
+---
+
+### Path 3: Docker Dashboard or Qdrant Cloud (Optional)
+By default, Qdrant runs embedded locally in `./.qdrant_local/` without background services. If you want the visual Qdrant Web UI dashboard or want to use a cloud cluster:
+
+- **Local Docker with Web UI**:
+  ```bash
+  docker compose up -d
+  ```
+  Set `QDRANT_URL=http://localhost:6333` in `.env` and access the dashboard at `http://localhost:6333/dashboard`.
+- **Qdrant Cloud**:
+  Set `QDRANT_URL=https://<your-cluster-id>.qdrant.io` and `QDRANT_API_KEY=<key>` in `.env`.
 
 ---
 
@@ -45,8 +75,8 @@ Application code connects through a single unified abstraction in `qdrant_high_f
 ├── scripts/
 │   └── generate_large_corpus.py# Deterministic 200-document synthetic stress-test generator
 ├── results/                    # Centralized benchmark results & canonical narrative report
-│   ├── README.md
-│   ├── benchmark_results.md    # Canonical consolidated benchmark report
+│   ├── README.md               # CSV schema and reproducibility instructions
+│   ├── benchmark_results.md    # Authoritative consolidated benchmark report
 │   ├── small/                  # Results on 16-document dataset
 │   └── generated_large/        # Results on 200-document dataset
 ├── docs/
