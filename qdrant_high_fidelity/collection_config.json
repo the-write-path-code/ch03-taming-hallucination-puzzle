@@ -1,0 +1,17 @@
+{
+  "collection_name": "ch03_retrieval_generated_large",
+  "connection_mode": "embedded",
+  "dense_vector": {
+    "name": "dense",
+    "size": 1024,
+    "distance": "cosine"
+  },
+  "sparse_vectors": null,
+  "payload_indexes": [
+    "document_type",
+    "failure_tags"
+  ],
+  "rebuilt": true,
+  "timestamp": "2026-08-17T17:47:17.140544+00:00",
+  "dataset": "generated_large"
+}

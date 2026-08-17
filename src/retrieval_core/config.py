@@ -140,3 +140,45 @@ def load_hybrid_config() -> HybridConfig:
         top_k=top_k,
     )
 
+
+@dataclass(frozen=True)
+class QdrantConfig:
+    """All settings needed for Stage 3.4 Qdrant retrieval."""
+
+    local_path: str
+    url: str | None
+    api_key: str | None
+    collection_prefix: str
+    dense_vector_name: str
+    rerank_candidates: int
+    top_k: int
+
+
+def load_qdrant_config() -> QdrantConfig:
+    """Load Section 3.4 Qdrant retrieval settings from the environment.
+
+    Embedded local storage (./.qdrant_local) is used when QDRANT_URL is unset.
+    When QDRANT_URL is set, connects to remote or Docker Qdrant.
+    """
+    local_path = _get("QDRANT_LOCAL_PATH", "./.qdrant_local")
+    url = _get("QDRANT_URL")
+    api_key = _get("QDRANT_API_KEY")
+    collection_prefix = _get("QDRANT_COLLECTION_PREFIX", "ch03_retrieval")
+    dense_vector_name = _get("QDRANT_DENSE_VECTOR_NAME", "dense")
+    rerank_candidates = _get_int("QDRANT_RERANK_CANDIDATES", 20)
+    if rerank_candidates < 1:
+        raise ValueError(f"QDRANT_RERANK_CANDIDATES must be at least 1, got {rerank_candidates}.")
+    top_k = _get_int("RETRIEVAL_TOP_K", 3)
+    if top_k < 1:
+        raise ValueError(f"RETRIEVAL_TOP_K must be at least 1, got {top_k}.")
+
+    return QdrantConfig(
+        local_path=local_path,
+        url=url,
+        api_key=api_key,
+        collection_prefix=collection_prefix,
+        dense_vector_name=dense_vector_name,
+        rerank_candidates=rerank_candidates,
+        top_k=top_k,
+    )
+
