@@ -38,7 +38,7 @@ class BGEM3Encoding:
 
     dense_vecs: list[list[float]]
     lexical_weights: list[dict[str, float]]
-    colbert_vecs: list[list[list[float]]]
+    colbert_vecs: list[Any]
 
 
 class BGEM3Provider:
@@ -58,7 +58,7 @@ class BGEM3Provider:
             return_colbert_vecs=True,
         )
         dense_vecs = [vector.tolist() for vector in output["dense_vecs"]]
-        colbert_vecs = [vectors.tolist() for vectors in output["colbert_vecs"]]
+        colbert_vecs = list(output["colbert_vecs"])
         return BGEM3Encoding(
             dense_vecs=dense_vecs,
             lexical_weights=list(output["lexical_weights"]),
@@ -75,9 +75,13 @@ class BGEM3Provider:
         return float(self.model.compute_lexical_matching_score(query_weights, doc_weights))
 
     def score_colbert(
-        self, query_vecs: list[list[float]], doc_vecs: list[list[float]]
+        self, query_vecs: Any, doc_vecs: Any
     ) -> float:
-        return float(self.model.colbert_score(query_vecs, doc_vecs).item())
+        import numpy as np
+
+        q = np.asarray(query_vecs) if not isinstance(query_vecs, np.ndarray) else query_vecs
+        d = np.asarray(doc_vecs) if not isinstance(doc_vecs, np.ndarray) else doc_vecs
+        return float(self.model.colbert_score(q, d).item())
 
     def score_hybrid(
         self,

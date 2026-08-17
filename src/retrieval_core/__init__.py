@@ -5,7 +5,9 @@ from retrieval_core.evaluation import (
     build_result,
     hit_at_k,
     load_eval_queries,
+    render_summary_markdown,
     summarize,
+    summarize_by_failure_mode,
     validate_against_corpus,
     write_results_csv,
 )
@@ -25,6 +27,8 @@ __all__ = [
     "build_result",
     "write_results_csv",
     "summarize",
+    "summarize_by_failure_mode",
+    "render_summary_markdown",
     "DatasetPaths",
     "resolve_dataset",
     "add_dataset_argument",

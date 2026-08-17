@@ -1,0 +1,65 @@
+query_id,query,expected_doc_ids,retrieved_doc_ids,hit_at_1,hit_at_k,failure_mode,method
+q-001,What does AX4-E117 mean?,product_atlas_gateway,product_atlas_gateway|pricing_gateway|spec_storage,1,1,keyword_exact_match,bge_m3_dense
+q-001,What does AX4-E117 mean?,product_atlas_gateway,product_atlas_gateway|pricing_gateway|operations_release_rollback,1,1,keyword_exact_match,bge_m3_sparse
+q-001,What does AX4-E117 mean?,product_atlas_gateway,product_atlas_gateway|pricing_gateway|policy_change_control,1,1,keyword_exact_match,bge_m3_colbert
+q-001,What does AX4-E117 mean?,product_atlas_gateway,product_atlas_gateway|pricing_gateway|policy_change_control,1,1,keyword_exact_match,bge_m3_hybrid
+q-002,How do I fix the Nimbus optical drift alert?,product_nimbus_sensor,product_nimbus_sensor|product_orion_switch|spec_sensor,1,1,semantic_paraphrase,bge_m3_dense
+q-002,How do I fix the Nimbus optical drift alert?,product_nimbus_sensor,product_nimbus_sensor|spec_sensor|operations_release_rollback,1,1,semantic_paraphrase,bge_m3_sparse
+q-002,How do I fix the Nimbus optical drift alert?,product_nimbus_sensor,product_nimbus_sensor|spec_sensor|product_orion_switch,1,1,semantic_paraphrase,bge_m3_colbert
+q-002,How do I fix the Nimbus optical drift alert?,product_nimbus_sensor,product_nimbus_sensor|spec_sensor|product_orion_switch,1,1,semantic_paraphrase,bge_m3_hybrid
+q-003,What does alert HRD-9C03 indicate on the Helios Reader?,product_helios_reader,product_helios_reader|operations_support_triage|product_atlas_gateway,1,1,keyword_exact_match,bge_m3_dense
+q-003,What does alert HRD-9C03 indicate on the Helios Reader?,product_helios_reader,product_helios_reader|product_nimbus_sensor|pricing_gateway,1,1,keyword_exact_match,bge_m3_sparse
+q-003,What does alert HRD-9C03 indicate on the Helios Reader?,product_helios_reader,product_helios_reader|product_nimbus_sensor|product_atlas_gateway,1,1,keyword_exact_match,bge_m3_colbert
+q-003,What does alert HRD-9C03 indicate on the Helios Reader?,product_helios_reader,product_helios_reader|product_nimbus_sensor|product_atlas_gateway,1,1,keyword_exact_match,bge_m3_hybrid
+q-004,"Which change ticket class is used to roll out the Orion Switch duplex negotiation fix, and why was the issue easy to overlook?",product_orion_switch,product_orion_switch|policy_change_control|pricing_gateway,1,1,long_context,bge_m3_dense
+q-004,"Which change ticket class is used to roll out the Orion Switch duplex negotiation fix, and why was the issue easy to overlook?",product_orion_switch,product_orion_switch|policy_change_control|policy_data_retention,1,1,long_context,bge_m3_sparse
+q-004,"Which change ticket class is used to roll out the Orion Switch duplex negotiation fix, and why was the issue easy to overlook?",product_orion_switch,product_orion_switch|operations_certificate_rotation|pricing_gateway,1,1,long_context,bge_m3_colbert
+q-004,"Which change ticket class is used to roll out the Orion Switch duplex negotiation fix, and why was the issue easy to overlook?",product_orion_switch,product_orion_switch|policy_change_control|operations_certificate_rotation,1,1,long_context,bge_m3_hybrid
+q-005,How many independent approvals does clause CC-17 require for a production change?,policy_change_control,policy_change_control|policy_access_review|policy_incident_severity,1,1,keyword_exact_match,bge_m3_dense
+q-005,How many independent approvals does clause CC-17 require for a production change?,policy_change_control,policy_change_control|policy_incident_severity|product_orion_switch,1,1,keyword_exact_match,bge_m3_sparse
+q-005,How many independent approvals does clause CC-17 require for a production change?,policy_change_control,policy_change_control|policy_incident_severity|policy_access_review,1,1,keyword_exact_match,bge_m3_colbert
+q-005,How many independent approvals does clause CC-17 require for a production change?,policy_change_control,policy_change_control|policy_incident_severity|policy_access_review,1,1,keyword_exact_match,bge_m3_hybrid
+q-006,How long must customer support attachments be retained under clause DR-44?,policy_data_retention,policy_data_retention|spec_storage|policy_change_control,1,1,keyword_exact_match,bge_m3_dense
+q-006,How long must customer support attachments be retained under clause DR-44?,policy_data_retention,policy_data_retention|spec_storage|pricing_gateway,1,1,keyword_exact_match,bge_m3_sparse
+q-006,How long must customer support attachments be retained under clause DR-44?,policy_data_retention,policy_data_retention|spec_storage|policy_access_review,1,1,keyword_exact_match,bge_m3_colbert
+q-006,How long must customer support attachments be retained under clause DR-44?,policy_data_retention,policy_data_retention|spec_storage|policy_access_review,1,1,keyword_exact_match,bge_m3_hybrid
+q-007,What does clause AR-12 require for privileged accounts?,policy_access_review,policy_access_review|policy_change_control|policy_incident_severity,1,1,keyword_exact_match,bge_m3_dense
+q-007,What does clause AR-12 require for privileged accounts?,policy_access_review,policy_access_review|operations_certificate_rotation|spec_storage,1,1,keyword_exact_match,bge_m3_sparse
+q-007,What does clause AR-12 require for privileged accounts?,policy_access_review,policy_access_review|policy_change_control|policy_data_retention,1,1,keyword_exact_match,bge_m3_colbert
+q-007,What does clause AR-12 require for privileged accounts?,policy_access_review,policy_access_review|policy_change_control|policy_data_retention,1,1,keyword_exact_match,bge_m3_hybrid
+q-008,Which ticket prefix must be used for P1 incidents?,policy_incident_severity,policy_incident_severity|operations_certificate_rotation|pricing_support,1,1,keyword_exact_match,bge_m3_dense
+q-008,Which ticket prefix must be used for P1 incidents?,policy_incident_severity,policy_incident_severity|pricing_support|product_orion_switch,1,1,keyword_exact_match,bge_m3_sparse
+q-008,Which ticket prefix must be used for P1 incidents?,policy_incident_severity,policy_incident_severity|pricing_support|product_orion_switch,1,1,keyword_exact_match,bge_m3_colbert
+q-008,Which ticket prefix must be used for P1 incidents?,policy_incident_severity,policy_incident_severity|pricing_support|product_orion_switch,1,1,keyword_exact_match,bge_m3_hybrid
+q-009,What is another name for certificate rollover in the operations runbooks?,operations_certificate_rotation,operations_certificate_rotation|operations_release_rollback|policy_change_control,1,1,semantic_paraphrase,bge_m3_dense
+q-009,What is another name for certificate rollover in the operations runbooks?,operations_certificate_rotation,operations_certificate_rotation|operations_release_rollback|operations_support_triage,1,1,semantic_paraphrase,bge_m3_sparse
+q-009,What is another name for certificate rollover in the operations runbooks?,operations_certificate_rotation,operations_certificate_rotation|operations_release_rollback|policy_change_control,1,1,semantic_paraphrase,bge_m3_colbert
+q-009,What is another name for certificate rollover in the operations runbooks?,operations_certificate_rotation,operations_certificate_rotation|operations_release_rollback|policy_change_control,1,1,semantic_paraphrase,bge_m3_hybrid
+q-010,"After comparing collector queue depth and source timestamps, what distinguishes an ingestion delay from event loss?",operations_telemetry_gap,operations_telemetry_gap|operations_support_triage|policy_incident_severity,1,1,long_context,bge_m3_dense
+q-010,"After comparing collector queue depth and source timestamps, what distinguishes an ingestion delay from event loss?",operations_telemetry_gap,operations_telemetry_gap|operations_support_triage|policy_data_retention,1,1,long_context,bge_m3_sparse
+q-010,"After comparing collector queue depth and source timestamps, what distinguishes an ingestion delay from event loss?",operations_telemetry_gap,operations_telemetry_gap|operations_support_triage|policy_incident_severity,1,1,long_context,bge_m3_colbert
+q-010,"After comparing collector queue depth and source timestamps, what distinguishes an ingestion delay from event loss?",operations_telemetry_gap,operations_telemetry_gap|operations_support_triage|policy_incident_severity,1,1,long_context,bge_m3_hybrid
+q-011,"During a rollback, what must be preserved before the prior artifact is restored?",operations_release_rollback,operations_release_rollback|policy_change_control|operations_certificate_rotation,1,1,long_context,bge_m3_dense
+q-011,"During a rollback, what must be preserved before the prior artifact is restored?",operations_release_rollback,operations_release_rollback|policy_change_control|operations_certificate_rotation,1,1,long_context,bge_m3_sparse
+q-011,"During a rollback, what must be preserved before the prior artifact is restored?",operations_release_rollback,operations_release_rollback|policy_change_control|policy_data_retention,1,1,long_context,bge_m3_colbert
+q-011,"During a rollback, what must be preserved before the prior artifact is restored?",operations_release_rollback,operations_release_rollback|policy_change_control|operations_certificate_rotation,1,1,long_context,bge_m3_hybrid
+q-012,What do support engineers mean by collecting the case fingerprint?,operations_support_triage,operations_support_triage|product_atlas_gateway|policy_data_retention,1,1,semantic_paraphrase,bge_m3_dense
+q-012,What do support engineers mean by collecting the case fingerprint?,operations_support_triage,operations_support_triage|policy_data_retention|spec_storage,1,1,semantic_paraphrase,bge_m3_sparse
+q-012,What do support engineers mean by collecting the case fingerprint?,operations_support_triage,operations_support_triage|product_nimbus_sensor|policy_data_retention,1,1,semantic_paraphrase,bge_m3_colbert
+q-012,What do support engineers mean by collecting the case fingerprint?,operations_support_triage,operations_support_triage|policy_data_retention|product_nimbus_sensor,1,1,semantic_paraphrase,bge_m3_hybrid
+q-013,Which Atlas module has a seven business day replacement lead time?,pricing_gateway,pricing_gateway|product_orion_switch|product_atlas_gateway,1,1,table_lookup,bge_m3_dense
+q-013,Which Atlas module has a seven business day replacement lead time?,pricing_gateway,pricing_gateway|product_helios_reader|product_atlas_gateway,1,1,table_lookup,bge_m3_sparse
+q-013,Which Atlas module has a seven business day replacement lead time?,pricing_gateway,pricing_gateway|product_helios_reader|policy_access_review,1,1,table_lookup,bge_m3_colbert
+q-013,Which Atlas module has a seven business day replacement lead time?,pricing_gateway,pricing_gateway|product_helios_reader|product_atlas_gateway,1,1,table_lookup,bge_m3_hybrid
+q-014,What is the included response target for the Priority support plan?,pricing_support,pricing_support|operations_support_triage|policy_incident_severity,1,1,table_lookup,bge_m3_dense
+q-014,What is the included response target for the Priority support plan?,pricing_support,pricing_support|spec_storage|policy_data_retention,1,1,table_lookup,bge_m3_sparse
+q-014,What is the included response target for the Priority support plan?,pricing_support,pricing_support|operations_support_triage|spec_storage,1,1,table_lookup,bge_m3_colbert
+q-014,What is the included response target for the Priority support plan?,pricing_support,pricing_support|spec_storage|operations_support_triage,1,1,table_lookup,bge_m3_hybrid
+q-015,What optical reference drift percentage triggers the Nimbus calibration threshold?,spec_sensor,product_nimbus_sensor|spec_sensor|product_orion_switch,0,1,table_lookup,bge_m3_dense
+q-015,What optical reference drift percentage triggers the Nimbus calibration threshold?,spec_sensor,spec_sensor|product_nimbus_sensor|operations_release_rollback,1,1,table_lookup,bge_m3_sparse
+q-015,What optical reference drift percentage triggers the Nimbus calibration threshold?,spec_sensor,spec_sensor|product_nimbus_sensor|operations_release_rollback,1,1,table_lookup,bge_m3_colbert
+q-015,What optical reference drift percentage triggers the Nimbus calibration threshold?,spec_sensor,product_nimbus_sensor|spec_sensor|operations_release_rollback,0,1,table_lookup,bge_m3_hybrid
+q-016,What is the minimum retention period for Vault-B storage?,spec_storage,spec_storage|policy_data_retention|spec_sensor,1,1,table_lookup,bge_m3_dense
+q-016,What is the minimum retention period for Vault-B storage?,spec_storage,spec_storage|policy_data_retention|product_atlas_gateway,1,1,table_lookup,bge_m3_sparse
+q-016,What is the minimum retention period for Vault-B storage?,spec_storage,spec_storage|policy_data_retention|spec_sensor,1,1,table_lookup,bge_m3_colbert
+q-016,What is the minimum retention period for Vault-B storage?,spec_storage,spec_storage|policy_data_retention|spec_sensor,1,1,table_lookup,bge_m3_hybrid

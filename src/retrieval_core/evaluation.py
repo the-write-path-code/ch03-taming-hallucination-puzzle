@@ -118,3 +118,53 @@ def summarize(results: list[EvalResult]) -> dict[str, float]:
         "hit_at_k_rate": sum(r.hit_at_k for r in results) / count,
         "count": count,
     }
+
+
+def summarize_by_failure_mode(results: list[EvalResult]) -> dict[str, dict[str, Any]]:
+    """Aggregate hit@1 and hit@k rates per failure mode."""
+    by_mode: dict[str, list[EvalResult]] = {}
+    for r in results:
+        by_mode.setdefault(r.failure_mode, []).append(r)
+
+    summary: dict[str, dict[str, Any]] = {}
+    for mode, mode_results in sorted(by_mode.items()):
+        count = len(mode_results)
+        summary[mode] = {
+            "count": count,
+            "hit_at_1_rate": sum(r.hit_at_1 for r in mode_results) / count,
+            "hit_at_k_rate": sum(r.hit_at_k for r in mode_results) / count,
+        }
+    return summary
+
+
+def render_summary_markdown(
+    results: list[EvalResult], dataset_name: str, method: str, k: int
+) -> str:
+    """Render a structured Markdown report of overall and failure-mode retrieval performance."""
+    overall = summarize(results)
+    by_mode = summarize_by_failure_mode(results)
+
+    lines = [
+        f"# Retrieval Benchmark Summary: `{method}`",
+        "",
+        f"- **Dataset**: `{dataset_name}`",
+        f"- **Total Queries**: {overall['count']}",
+        f"- **Top-K Parameter**: k={k}",
+        f"- **Overall Hit@1**: {overall['hit_at_1_rate']:.1%}",
+        f"- **Overall Hit@{k}**: {overall['hit_at_k_rate']:.1%}",
+        "",
+        "## Performance Breakdown by Failure Mode",
+        "",
+        f"| Failure Mode | Queries | Hit@1 Rate | Hit@{k} Rate |",
+        "| :--- | :---: | :---: | :---: |",
+    ]
+    for mode, stats in by_mode.items():
+        lines.append(
+            f"| `{mode}` | {stats['count']} | {stats['hit_at_1_rate']:.1%} | {stats['hit_at_k_rate']:.1%} |"
+        )
+    lines.append(
+        f"| **Overall** | **{overall['count']}** | **{overall['hit_at_1_rate']:.1%}** | **{overall['hit_at_k_rate']:.1%}** |"
+    )
+    lines.append("")
+    return "\n".join(lines)
+

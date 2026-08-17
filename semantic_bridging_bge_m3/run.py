@@ -17,23 +17,31 @@ OPENAI_API_KEY set and --use-hyde passed, and falls back to the raw query
 with a clear message otherwise.
 """
 
-from __future__ import annotations
-
 import argparse
+import sys
 from pathlib import Path
+
+_repo_root = Path(__file__).resolve().parent.parent
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
 
 from retrieval_core import (
     add_dataset_argument,
     build_result,
     load_corpus,
     load_eval_queries,
+    render_summary_markdown,
     resolve_dataset,
     summarize,
     validate_against_corpus,
     write_results_csv,
 )
 from retrieval_core.config import _get, load_dense_provider_config
-from semantic_bridging_bge_m3.provider import BGEM3Encoding, BGEM3Provider
+
+try:
+    from semantic_bridging_bge_m3.provider import BGEM3Encoding, BGEM3Provider
+except ImportError:
+    from provider import BGEM3Encoding, BGEM3Provider
 
 OUTPUT_PATH = Path(__file__).parent / "bge_m3_results.csv"
 _hyde_warned = False
@@ -159,14 +167,55 @@ def main() -> None:
 
     write_results_csv(all_results, args.output)
 
-    for method in ("bge_m3_dense", "bge_m3_sparse", "bge_m3_colbert", "bge_m3_hybrid"):
+    summary_lines = [
+        f"# BGE-M3 Semantic Bridging Benchmark: `{args.dataset}`",
+        "",
+        f"- **Dataset**: `{args.dataset}`",
+        f"- **Total Queries**: {len(queries)}",
+        f"- **Top-K Parameter**: k={top_k}",
+        f"- **HyDE Enabled**: {args.use_hyde}",
+        "",
+        "## Overall Representation Comparison",
+        "",
+        f"| Method / Representation | Queries | Hit@1 Rate | Hit@{top_k} Rate |",
+        "| :--- | :---: | :---: | :---: |",
+    ]
+
+    methods = ("bge_m3_dense", "bge_m3_sparse", "bge_m3_colbert", "bge_m3_hybrid")
+    for method in methods:
         subset = [r for r in all_results if r.method == method]
         stats = summarize(subset)
+        summary_lines.append(
+            f"| `{method}` | {stats['count']} | {stats['hit_at_1_rate']:.1%} | {stats['hit_at_k_rate']:.1%} |"
+        )
         print(
             f"{method}: hit@1={stats['hit_at_1_rate']:.2f} "
             f"hit@{top_k}={stats['hit_at_k_rate']:.2f} (n={stats['count']})"
         )
-    print(f"Wrote {len(all_results)} rows to {args.output}.")
+
+    summary_lines.append("")
+    summary_lines.append("## Performance Breakdown by Failure Mode")
+    summary_lines.append("")
+
+    from retrieval_core.evaluation import summarize_by_failure_mode
+
+    # Aggregate by failure mode across methods
+    for method in methods:
+        subset = [r for r in all_results if r.method == method]
+        by_mode = summarize_by_failure_mode(subset)
+        summary_lines.append(f"### `{method}`")
+        summary_lines.append("")
+        summary_lines.append(f"| Failure Mode | Queries | Hit@1 Rate | Hit@{top_k} Rate |")
+        summary_lines.append("| :--- | :---: | :---: | :---: |")
+        for mode, stats in by_mode.items():
+            summary_lines.append(
+                f"| `{mode}` | {stats['count']} | {stats['hit_at_1_rate']:.1%} | {stats['hit_at_k_rate']:.1%} |"
+            )
+        summary_lines.append("")
+
+    summary_path = args.output.with_suffix(".md")
+    summary_path.write_text("\n".join(summary_lines), encoding="utf-8")
+    print(f"Wrote {len(all_results)} rows to {args.output} and summary to {summary_path}.")
 
 
 if __name__ == "__main__":

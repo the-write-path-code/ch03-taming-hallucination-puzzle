@@ -87,3 +87,25 @@ Writes `naive_baseline/naive_results.csv` with columns: `query_id`, `query`,
 `expected_doc_ids`, `retrieved_doc_ids`, `hit_at_1`, `hit_at_k`,
 `failure_mode`, `method`. The `method` column records the exact provider used
 (e.g. `dense_only:ollama`) so later stages' CSVs can be compared side by side.
+
+Also generates a companion summary report (`naive_baseline/naive_results.md` or alongside the custom `--output` path) detailing overall and per-failure-mode hit rates.
+
+## Benchmark Results
+
+### Dense-Only Baseline Performance (BGE-M3 via Ollama)
+
+| Dataset | Documents | Total Queries | Hit@1 Rate | Hit@3 Rate |
+|---|---|---|---|---|
+| **Small Corpus** | 16 | 16 | **93.8%** | **100.0%** |
+| **Generated Large Corpus** | 200 | 32 | **12.5%** | **21.9%** |
+
+### Breakdown by Failure Mode (Large Corpus)
+
+| Failure Mode | Queries | Hit@1 Rate | Hit@3 Rate | Failure Mechanism |
+|---|---|---|---|---|
+| `keyword_exact_match` | 8 | 12.5% | 12.5% | Short identifiers map to similar-looking tokens rather than exact documents |
+| `long_context` | 8 | 0.0% | 25.0% | Key facts in long docs get diluted by surrounding distractor prose |
+| `semantic_paraphrase` | 8 | 12.5% | 12.5% | Distractor documents sharing general vocabulary outrank the paraphrased target |
+| `table_lookup` | 8 | 25.0% | 37.5% | Markdown table rows lack surrounding narrative context for dense vectors |
+| **Total / Overall** | **32** | **12.5%** | **21.9%** | **Dense-only baseline failure** |
+

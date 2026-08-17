@@ -25,6 +25,7 @@ from retrieval_core import (
     build_result,
     load_corpus,
     load_eval_queries,
+    render_summary_markdown,
     resolve_dataset,
     summarize,
     validate_against_corpus,
@@ -41,7 +42,6 @@ def _is_local_url(url: str) -> bool:
 
 def embed_with_ollama(texts: list[str], config: DenseProviderConfig) -> list[list[float]]:
     url = config.ollama_base_url.rstrip("/") + "/api/embed"
-    payload = json.dumps({"model": config.ollama_embed_model, "input": texts}).encode("utf-8")
     headers = {"Content-Type": "application/json"}
     if config.ollama_api_key:
         headers["Authorization"] = f"Bearer {config.ollama_api_key}"
@@ -52,20 +52,27 @@ def embed_with_ollama(texts: list[str], config: DenseProviderConfig) -> list[lis
             "Set OLLAMA_API_KEY for Ollama Cloud, or point OLLAMA_BASE_URL at a "
             "local Ollama instance (default http://localhost:11434)."
         )
-    request = urllib.request.Request(url, data=payload, headers=headers, method="POST")
-    try:
-        with urllib.request.urlopen(request, timeout=60) as response:
-            body = json.loads(response.read().decode("utf-8"))
-    except urllib.error.URLError as exc:
-        raise SystemExit(
-            f"Could not reach Ollama at {config.ollama_base_url!r}: {exc}. "
-            "Check OLLAMA_BASE_URL and that Ollama is running, or use a different "
-            "DENSE_PROVIDER in .env."
-        ) from exc
-    embeddings = body.get("embeddings")
-    if not embeddings:
-        raise SystemExit(f"Ollama response did not include embeddings: {body}")
-    return embeddings
+
+    batch_size = 16
+    all_embeddings: list[list[float]] = []
+    for offset in range(0, len(texts), batch_size):
+        batch = texts[offset : offset + batch_size]
+        payload = json.dumps({"model": config.ollama_embed_model, "input": batch}).encode("utf-8")
+        request = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+        try:
+            with urllib.request.urlopen(request, timeout=120) as response:
+                body = json.loads(response.read().decode("utf-8"))
+        except urllib.error.URLError as exc:
+            raise SystemExit(
+                f"Could not reach Ollama at {config.ollama_base_url!r}: {exc}. "
+                "Check OLLAMA_BASE_URL and that Ollama is running, or use a different "
+                "DENSE_PROVIDER in .env."
+            ) from exc
+        embeddings = body.get("embeddings")
+        if not embeddings:
+            raise SystemExit(f"Ollama response did not include embeddings: {body}")
+        all_embeddings.extend(embeddings)
+    return all_embeddings
 
 
 def embed_with_openai(texts: list[str], config: DenseProviderConfig) -> list[list[float]]:
@@ -174,10 +181,16 @@ def main() -> None:
 
     write_results_csv(results, args.output)
     stats = summarize(results)
-    print(
-        f"Wrote {stats['count']} results to {args.output} "
-        f"(hit@1={stats['hit_at_1_rate']:.2f}, hit@{top_k}={stats['hit_at_k_rate']:.2f})."
+    summary_md = render_summary_markdown(
+        results, dataset_name=args.dataset, method=method, k=top_k
     )
+    summary_path = args.output.with_suffix(".md")
+    summary_path.write_text(summary_md, encoding="utf-8")
+
+    print(
+        f"Wrote {stats['count']} results to {args.output} and summary to {summary_path}\n"
+    )
+    print(summary_md)
 
 
 if __name__ == "__main__":
