@@ -112,7 +112,7 @@ uv run python qdrant_high_fidelity/run.py --dataset generated_large --rebuild
 
 ---
 
-## Benchmark Highlights
+## Benchmark Highlights & Architectural Takeaways
 
 Empirical results measured on the 200-document stress-testing corpus:
 
@@ -125,6 +125,18 @@ Empirical results measured on the 200-document stress-testing corpus:
 | **3.4** | `qdrant_dense` | 12.5% | 21.9% | First-stage persistent vector search (1.4 ms/query) |
 | **3.4** | `qdrant_dense_colbert_rerank` | **31.2%** | **56.2%** | Second-stage ColBERT reranking improves Hit@3 by 2.5x |
 
+### Component Synergy in Production RAG
+
+| Component | What it Solves | Where it Fails Alone | Production Role |
+| :--- | :--- | :--- | :--- |
+| **Dense Vectors** | Conceptual meaning & paraphrasing | Misses exact identifiers and tables | First-stage semantic recall |
+| **Sparse / BM25** | Exact alphanumeric codes & tables | Misses synonyms & conceptual intent | First-stage lexical recall |
+| **Relative Score Fusion** | Normalizes & balances both legs | N/A (fusion algorithm) | **Unifies first-stage search (12.5% $\to$ 87.5% Hit@1)** |
+| **ColBERT Multi-Vectors** | Token-level MaxSim alignment | High latency across full corpus | **High-precision reranker on top finalists** |
+
+**The Production Blueprint**: Use **Relative Score Fusion (Dense + BM25)** for millisecond-fast candidate retrieval over the entire corpus, then apply **ColBERT token reranking** on the top 20–50 finalists to establish precision ranking before feeding context to the LLM.
+
 For full cross-stage benchmark tables and latency trade-offs, see [**`results/benchmark_results.md`**](results/benchmark_results.md).
 For detailed architecture flowcharts, see [**`docs/workflow.md`**](docs/workflow.md).
+
 

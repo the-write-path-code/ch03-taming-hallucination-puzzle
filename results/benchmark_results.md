@@ -104,6 +104,31 @@ On the 200-document dataset, **Relative Score Fusion (87.5% Hit@1)** outperforme
 
 ---
 
+## Architectural Synthesis: The Two-Stage Production Blueprint
+
+A key finding across Chapter 3 is that no single retrieval algorithm is sufficient for enterprise RAG on complex, long documents. High-fidelity retrieval relies on component synergy:
+
+| Component | What it Solves | Where it Fails Alone | Combined Benefit in Production |
+| :--- | :--- | :--- | :--- |
+| **Dense Vectors** | Broad semantic intent (e.g., *"thermal limit"* $\approx$ *"maximum operating temperature"*). | Fails on exact codes (`AX4-E117`), product SKUs, and isolated table rows. | Captures conceptual and paraphrase queries where exact vocabulary is unknown. |
+| **Sparse / BM25** | Exact alphanumeric identifiers, table headers, and error codes. | Fails on synonyms, paraphrasing, and vocabulary mismatches. | Guarantees exact keyword matches and identifiers are never diluted. |
+| **Relative Score Fusion (RSF)** | Normalizes and balances dense and sparse scores without losing confidence margins. | N/A (algorithm, not a retriever). | **Takes large-corpus retrieval from 12.5% to 87.5% Hit@1.** |
+| **ColBERT (Late Interaction)** | Token-level MaxSim matching without compressing documents into a single vector. | Slower to compute across thousands of raw corpus documents. | **Acts as the ultimate precision tie-breaker** on top finalists, boosting Hit@3 by 2.5x. |
+
+### The Recommended Two-Stage Funnel
+
+```mermaid
+flowchart LR
+    A["Entire Corpus (Thousands of Docs)"] -->|Stage 1: Fast Hybrid RSF (Dense + BM25)| B["Top 20-50 Candidates (High Recall ~90%+)"]
+    B -->|Stage 2: ColBERT Token MaxSim Rerank| C["Top 3 Context for LLM (High Precision)"]
+```
+
+1. **Stage 1 (High-Recall Candidate Retrieval)**: Use **Relative Score Fusion (Dense + BM25/Sparse)** to scan the global corpus in milliseconds, ensuring the target document is within the top 20–50 finalists.
+2. **Stage 2 (High-Precision Reranking)**: Use **ColBERT token interaction** exclusively on those top 20–50 finalists to establish the exact rank order before feeding context to the LLM.
+
+---
+
+
 ## Reproduction Commands
 
 ### Base Environment (BM25 + Dense Qdrant)
