@@ -1,0 +1,17 @@
+{
+  "collection_name": "ch03_retrieval_small",
+  "connection_mode": "embedded",
+  "dense_vector": {
+    "name": "dense",
+    "size": 1024,
+    "distance": "cosine"
+  },
+  "sparse_vectors": null,
+  "payload_indexes": [
+    "document_type",
+    "failure_tags"
+  ],
+  "rebuilt": true,
+  "timestamp": "2026-08-17T17:44:25.000000+00:00",
+  "dataset": "small"
+}

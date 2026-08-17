@@ -80,7 +80,7 @@ uv sync
 uv run python hybrid_retrieval/run.py --dataset small
 ```
 
-Output is written to `hybrid_retrieval/fusion_comparison.csv` and summarized in `hybrid_retrieval/fusion_comparison.md`, containing:
+Output is written to `results/small/hybrid_fusion.csv` containing:
 - `dense_only`
 - `bm25_only`
 - `rrf_dense_bm25`
@@ -90,7 +90,7 @@ Output is written to `hybrid_retrieval/fusion_comparison.csv` and summarized in 
 
 ```bash
 uv sync --extra local-bge-m3
-uv run python hybrid_retrieval/run.py --dataset small --sparse-method bge_m3_sparse
+uv run python hybrid_retrieval/run.py --dataset small --sparse-method bge_m3_sparse --output results/small/hybrid_fusion_bge_m3_sparse.csv
 ```
 
 Generates:
@@ -103,8 +103,16 @@ Generates:
 
 ```bash
 uv run python scripts/generate_large_corpus.py --documents 200 --seed 42
-uv run python hybrid_retrieval/run.py --dataset generated_large --output hybrid_retrieval/fusion_comparison_large.csv
+uv run python hybrid_retrieval/run.py --dataset generated_large
 ```
+
+Writes to `results/generated_large/hybrid_fusion.csv`.
+
+---
+
+## Output & Benchmark Findings
+
+For full cross-stage benchmark comparisons and analysis, see [**`results/benchmark_results.md`**](../results/benchmark_results.md).
 
 ---
 
@@ -112,4 +120,5 @@ uv run python hybrid_retrieval/run.py --dataset generated_large --output hybrid_
 
 This stage focuses strictly on algorithmic score fusion and lexical/dense retrieval legs without vector databases or generative LLMs.
 
-In the next stage (**Section 3.4: `qdrant_high_fidelity/`**), we will deploy these hybrid vectors into a persistent Qdrant collection with payload filtering and vector index optimization.
+In the next stage (**Section 3.4: `qdrant_high_fidelity/`**), we deploy these hybrid vectors into a persistent Qdrant collection with payload filtering and vector index optimization.
+

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""3.4 High-Fidelity Retrieval in Qdrant.
+"""Stage 3.4: High-Fidelity Retrieval in Qdrant.
 
 Demonstrates persistent embedded vector storage, structured metadata filtering,
 collection schema management, and optional second-stage ColBERT reranking.
@@ -8,6 +8,8 @@ Emits:
 - 'qdrant_dense': Named dense vector retrieval in Qdrant (cosine similarity).
 - 'qdrant_dense_colbert_rerank': Second-stage token-level ColBERT reranking over top candidates
   (when local-bge-m3 is available).
+
+Writes results to results/<dataset>/qdrant_high_fidelity.csv.
 """
 
 from __future__ import annotations
@@ -40,7 +42,6 @@ from retrieval_core import (
     build_result,
     load_corpus,
     load_eval_queries,
-    render_summary_markdown,
     resolve_dataset,
     summarize,
     validate_against_corpus,
@@ -53,9 +54,6 @@ from retrieval_core.config import (
     load_qdrant_config,
 )
 from retrieval_core.types import Document, EvalQuery, EvalResult
-
-OUTPUT_PATH = Path(__file__).parent / "qdrant_results.csv"
-CONFIG_OUTPUT_PATH = Path(__file__).parent / "collection_config.json"
 
 
 def _is_local_url(url: str) -> bool:
@@ -127,6 +125,9 @@ def embed_dense_texts(texts: list[str], config: DenseProviderConfig) -> list[lis
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run Section 3.4 High-Fidelity Retrieval in Qdrant."
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run Section 3.4 High-Fidelity Retrieval in Qdrant."
     )
     add_dataset_argument(parser)
     parser.add_argument("--top-k", type=int, default=None, help="Override RETRIEVAL_TOP_K.")
@@ -150,8 +151,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=Path,
-        default=OUTPUT_PATH,
-        help=f"Where to write results CSV (default: {OUTPUT_PATH}).",
+        default=None,
+        help="Where to write results CSV (default: results/<dataset>/qdrant_high_fidelity.csv).",
     )
     parser.add_argument(
         "--collection-name",
@@ -162,6 +163,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+
 def main() -> None:
     args = parse_args()
     dense_config = load_dense_provider_config()
@@ -169,6 +171,13 @@ def main() -> None:
     top_k = args.top_k if args.top_k is not None else qdrant_config.top_k
 
     dataset_paths = resolve_dataset(args.dataset)
+    output_path = (
+        args.output
+        if args.output is not None
+        else _repo_root / "results" / args.dataset / "qdrant_high_fidelity.csv"
+    )
+    config_output_path = output_path.parent / "qdrant_collection_config.json"
+
     documents = load_corpus(dataset_paths.corpus_dir)
     queries = load_eval_queries(dataset_paths.eval_queries_path)
     validate_against_corpus(queries, {doc.doc_id for doc in documents})
@@ -214,7 +223,7 @@ def main() -> None:
         connection_mode=connection_mode,
     )
     schema_info["dataset"] = args.dataset
-    write_collection_config(schema_info, CONFIG_OUTPUT_PATH)
+    write_collection_config(schema_info, config_output_path)
 
     # 5. Index points if newly created or rebuilt
     if was_rebuilt or client.get_collection(collection_name).points_count == 0:
@@ -319,7 +328,7 @@ def main() -> None:
             )
 
     # 8. Write Results CSV
-    write_results_csv(all_results, args.output)
+    write_results_csv(all_results, output_path)
 
     # Unique methods
     emitted_methods: list[str] = []
@@ -327,65 +336,24 @@ def main() -> None:
         if r.method not in emitted_methods:
             emitted_methods.append(r.method)
 
-    # Summary
-    summary_lines = [
-        f"# Qdrant High-Fidelity Retrieval Summary: `{collection_name}`",
-        "",
-        f"- **Dataset**: `{args.dataset}`",
-        f"- **Collection Name**: `{collection_name}`",
-        f"- **Connection Mode**: `{connection_mode}`",
-        f"- **Total Queries**: {len(queries)}",
-        f"- **Top-K Parameter**: k={top_k}",
-        f"- **Rerank Candidate Pool**: {candidate_limit}",
-        f"- **Total Search Time**: {total_query_time:.3f}s (avg {total_query_time / len(queries) * 1000:.1f}ms/query)",
-    ]
-    if bge_provider is not None:
-        summary_lines.append(
-            f"- **Total ColBERT Rerank Time**: {total_rerank_time:.3f}s (avg {total_rerank_time / len(queries) * 1000:.1f}ms/query)"
-        )
-    summary_lines.extend(
-        [
-            "",
-            "## Overall Representation Comparison",
-            "",
-            f"| Method / Representation | Queries | Hit@1 Rate | Hit@{top_k} Rate |",
-            "| :--- | :---: | :---: | :---: |",
-        ]
+    print(
+        f"\nSearch timings ({len(queries)} queries): "
+        f"dense search={total_query_time:.3f}s (avg {total_query_time / len(queries) * 1000:.1f}ms/query)"
     )
+    if bge_provider is not None:
+        print(
+            f"ColBERT rerank={total_rerank_time:.3f}s (avg {total_rerank_time / len(queries) * 1000:.1f}ms/query)"
+        )
 
     for method in emitted_methods:
         subset = [r for r in all_results if r.method == method]
         stats = summarize(subset)
-        summary_lines.append(
-            f"| `{method}` | {stats['count']} | {stats['hit_at_1_rate']:.1%} | {stats['hit_at_k_rate']:.1%} |"
-        )
         print(
             f"{method}: hit@1={stats['hit_at_1_rate']:.2f} "
             f"hit@{top_k}={stats['hit_at_k_rate']:.2f} (n={stats['count']})"
         )
 
-    summary_lines.append("")
-    summary_lines.append("## Performance Breakdown by Failure Mode")
-    summary_lines.append("")
-
-    from retrieval_core.evaluation import summarize_by_failure_mode
-
-    for method in emitted_methods:
-        subset = [r for r in all_results if r.method == method]
-        by_mode = summarize_by_failure_mode(subset)
-        summary_lines.append(f"### `{method}`")
-        summary_lines.append("")
-        summary_lines.append(f"| Failure Mode | Queries | Hit@1 Rate | Hit@{top_k} Rate |")
-        summary_lines.append("| :--- | :---: | :---: | :---: |")
-        for mode, stats in by_mode.items():
-            summary_lines.append(
-                f"| `{mode}` | {stats['count']} | {stats['hit_at_1_rate']:.1%} | {stats['hit_at_k_rate']:.1%} |"
-            )
-        summary_lines.append("")
-
-    summary_path = args.output.with_suffix(".md")
-    summary_path.write_text("\n".join(summary_lines), encoding="utf-8")
-    print(f"Wrote {len(all_results)} rows to {args.output} and summary to {summary_path}.")
+    print(f"Wrote {len(all_results)} rows to {output_path}.")
 
 
 if __name__ == "__main__":

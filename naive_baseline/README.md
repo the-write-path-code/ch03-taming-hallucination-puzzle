@@ -8,20 +8,20 @@ technique fixes.
 ## Why exact identifiers and table values fail here
 
 Dense embedding models are trained to capture semantic meaning, not exact
-tokens. Two consequences show up directly in `naive_results.csv`:
+tokens. Two consequences show up directly in `naive_dense_only.csv`:
 
 - **Exact identifiers** such as `AX4-E117` or `CC-17` are short, low-frequency
   tokens. A dense encoder maps them close to other short alphanumeric strings
   in embedding space, not to the one document that defines them. A query like
   "What does AX4-E117 mean?" can retrieve documents about unrelated fault
-  codes because the *shape* of the token, not its specific identity, drives
+  codes because the shape of the token, not its specific identity, drives
   the embedding.
 - **Table values** are usually short numeric or categorical facts (a price, a
   retention period, a temperature limit) surrounded by very little
   descriptive prose. Dense retrieval relies on contextual language to place a
   passage correctly in embedding space; a bare table row does not give it
   enough signal, so table-lookup queries in the evaluation set are the
-  failure mode most likely to score `hit_at_1 = 0` in `naive_results.csv`.
+  failure mode most likely to score `hit_at_1 = 0` in `naive_dense_only.csv`.
 
 Both problems are addressed by later stages: sparse/lexical retrieval (3.2,
 3.3) recovers exact-token matches, and hybrid fusion plus reranking (3.3, 3.4)
@@ -50,10 +50,9 @@ embedding provider or model.
 
 Ollama, and any OpenAI-compatible hosted endpoint, can only return **dense**
 embeddings for BGE-M3. Neither exposes the model's native sparse lexical
-weights or ColBERT multi-vectors -- that capability exists only through the
+weights or ColBERT multi-vectors (that capability exists only through the
 `local-bge-m3` extra using `FlagEmbedding.BGEM3FlagModel` directly, which is
-what Stage 3.2 (`semantic_bridging_bge_m3/`) uses. This stage never claims
-otherwise.
+what Stage 3.2 uses). This stage never claims otherwise.
 
 ### Provider notes
 
@@ -83,29 +82,8 @@ uv run python naive_baseline/run.py --dataset generated_large --output /tmp/naiv
 
 ## Output
 
-Writes `naive_baseline/naive_results.csv` with columns: `query_id`, `query`,
-`expected_doc_ids`, `retrieved_doc_ids`, `hit_at_1`, `hit_at_k`,
-`failure_mode`, `method`. The `method` column records the exact provider used
-(e.g. `dense_only:ollama`) so later stages' CSVs can be compared side by side.
+Writes to `results/<dataset>/naive_dense_only.csv` (e.g. `results/small/naive_dense_only.csv`) with columns: `query_id`, `query`, `expected_doc_ids`, `retrieved_doc_ids`, `hit_at_1`, `hit_at_k`, `failure_mode`, `method`.
 
-Also generates a companion summary report (`naive_baseline/naive_results.md` or alongside the custom `--output` path) detailing overall and per-failure-mode hit rates.
+For full cross-stage benchmark comparisons and analysis, see [**`results/benchmark_results.md`**](../results/benchmark_results.md).
 
-## Benchmark Results
-
-### Dense-Only Baseline Performance (BGE-M3 via Ollama)
-
-| Dataset | Documents | Total Queries | Hit@1 Rate | Hit@3 Rate |
-|---|---|---|---|---|
-| **Small Corpus** | 16 | 16 | **93.8%** | **100.0%** |
-| **Generated Large Corpus** | 200 | 32 | **12.5%** | **21.9%** |
-
-### Breakdown by Failure Mode (Large Corpus)
-
-| Failure Mode | Queries | Hit@1 Rate | Hit@3 Rate | Failure Mechanism |
-|---|---|---|---|---|
-| `keyword_exact_match` | 8 | 12.5% | 12.5% | Short identifiers map to similar-looking tokens rather than exact documents |
-| `long_context` | 8 | 0.0% | 25.0% | Key facts in long docs get diluted by surrounding distractor prose |
-| `semantic_paraphrase` | 8 | 12.5% | 12.5% | Distractor documents sharing general vocabulary outrank the paraphrased target |
-| `table_lookup` | 8 | 25.0% | 37.5% | Markdown table rows lack surrounding narrative context for dense vectors |
-| **Total / Overall** | **32** | **12.5%** | **21.9%** | **Dense-only baseline failure** |
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""3.3 Hybrid retrieval with dense and sparse search.
+"""Stage 3.3: Hybrid retrieval with dense and sparse search.
 
 Demonstrates independent dense and sparse retrieval legs, then compares
 Reciprocal Rank Fusion (RRF) and Relative Score Fusion (RSF) against
@@ -11,7 +11,7 @@ Supports:
 - Dense leg: Configured dense provider (Ollama, OpenAI, or local BGE-M3).
 - Fusion: RRF (rank-based) and Relative Score Fusion (normalized score weighted sum).
 
-Writes all compared methods to fusion_comparison.csv and emits a companion summary.
+Writes all compared methods to results/<dataset>/hybrid_fusion.csv.
 """
 
 from __future__ import annotations
@@ -36,7 +36,6 @@ from retrieval_core import (
     build_result,
     load_corpus,
     load_eval_queries,
-    render_summary_markdown,
     resolve_dataset,
     summarize,
     validate_against_corpus,
@@ -49,8 +48,6 @@ from retrieval_core.config import (
     load_hybrid_config,
 )
 from retrieval_core.types import Document, EvalQuery, EvalResult
-
-OUTPUT_PATH = Path(__file__).parent / "fusion_comparison.csv"
 
 # Regex pattern for deterministic tokenization preserving identifiers like AX4-E117, CC-17, NSN-42, HRD-9C03
 TOKEN_PATTERN = re.compile(r"[a-zA-Z0-9]+(?:[-_][a-zA-Z0-9]+)*")
@@ -190,8 +187,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=Path,
-        default=OUTPUT_PATH,
-        help=f"Where to write comparison CSV (default: {OUTPUT_PATH}).",
+        default=None,
+        help="Where to write comparison CSV (default: results/<dataset>/hybrid_fusion.csv).",
     )
     parser.add_argument(
         "--include-bm25",
@@ -213,6 +210,12 @@ def main() -> None:
     sparse_weight = args.sparse_weight if args.sparse_weight is not None else hybrid_config.sparse_weight
 
     dataset_paths = resolve_dataset(args.dataset)
+    output_path = (
+        args.output
+        if args.output is not None
+        else _repo_root / "results" / args.dataset / "hybrid_fusion.csv"
+    )
+
     documents = load_corpus(dataset_paths.corpus_dir)
     queries = load_eval_queries(dataset_paths.eval_queries_path)
     validate_against_corpus(queries, {doc.doc_id for doc in documents})
@@ -368,7 +371,7 @@ def main() -> None:
             )
 
     # Write results CSV
-    write_results_csv(all_results, args.output)
+    write_results_csv(all_results, output_path)
 
     # Unique methods in order of appearance
     emitted_methods: list[str] = []
@@ -376,55 +379,15 @@ def main() -> None:
         if r.method not in emitted_methods:
             emitted_methods.append(r.method)
 
-    summary_lines = [
-        f"# Hybrid Retrieval Benchmark Summary: `{sparse_method}`",
-        "",
-        f"- **Dataset**: `{args.dataset}`",
-        f"- **Total Queries**: {len(queries)}",
-        f"- **Top-K Parameter**: k={top_k}",
-        f"- **Sparse Method**: `{sparse_method}`",
-        f"- **RRF Constant (rrf_k)**: {rrf_k}",
-        f"- **RSF Weights**: dense={dense_weight}, sparse={sparse_weight}",
-        "",
-        "## Overall Representation Comparison",
-        "",
-        f"| Method / Representation | Queries | Hit@1 Rate | Hit@{top_k} Rate |",
-        "| :--- | :---: | :---: | :---: |",
-    ]
-
     for method in emitted_methods:
         subset = [r for r in all_results if r.method == method]
         stats = summarize(subset)
-        summary_lines.append(
-            f"| `{method}` | {stats['count']} | {stats['hit_at_1_rate']:.1%} | {stats['hit_at_k_rate']:.1%} |"
-        )
         print(
             f"{method}: hit@1={stats['hit_at_1_rate']:.2f} "
             f"hit@{top_k}={stats['hit_at_k_rate']:.2f} (n={stats['count']})"
         )
 
-    summary_lines.append("")
-    summary_lines.append("## Performance Breakdown by Failure Mode")
-    summary_lines.append("")
-
-    from retrieval_core.evaluation import summarize_by_failure_mode
-
-    for method in emitted_methods:
-        subset = [r for r in all_results if r.method == method]
-        by_mode = summarize_by_failure_mode(subset)
-        summary_lines.append(f"### `{method}`")
-        summary_lines.append("")
-        summary_lines.append(f"| Failure Mode | Queries | Hit@1 Rate | Hit@{top_k} Rate |")
-        summary_lines.append("| :--- | :---: | :---: | :---: |")
-        for mode, stats in by_mode.items():
-            summary_lines.append(
-                f"| `{mode}` | {stats['count']} | {stats['hit_at_1_rate']:.1%} | {stats['hit_at_k_rate']:.1%} |"
-            )
-        summary_lines.append("")
-
-    summary_path = args.output.with_suffix(".md")
-    summary_path.write_text("\n".join(summary_lines), encoding="utf-8")
-    print(f"Wrote {len(all_results)} rows to {args.output} and summary to {summary_path}.")
+    print(f"Wrote {len(all_results)} rows to {output_path}.")
 
 
 if __name__ == "__main__":

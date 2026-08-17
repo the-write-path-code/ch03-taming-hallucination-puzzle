@@ -103,7 +103,7 @@ uv sync --extra local-bge-m3
 uv run python qdrant_high_fidelity/run.py --dataset small --rebuild
 ```
 
-Emits two evaluation methods into `qdrant_results.csv`:
+Emits two evaluation methods into `results/<dataset>/qdrant_high_fidelity.csv`:
 - `qdrant_dense`: First-stage Qdrant dense vector search.
 - `qdrant_dense_colbert_rerank`: Second-stage ColBERT reranking over top candidates.
 
@@ -111,13 +111,14 @@ Emits two evaluation methods into `qdrant_results.csv`:
 
 ```bash
 uv run python scripts/generate_large_corpus.py --documents 200 --seed 42
-uv run python qdrant_high_fidelity/run.py --dataset generated_large --rebuild --output qdrant_high_fidelity/qdrant_results_large.csv
+uv run python qdrant_high_fidelity/run.py --dataset generated_large --rebuild
 ```
 
 ---
 
 ## Output Artifacts
 
-- **Results CSV**: `qdrant_high_fidelity/qdrant_results.csv`
-- **Summary Report**: `qdrant_high_fidelity/qdrant_results.md`
-- **Live Schema Config**: `qdrant_high_fidelity/collection_config.json`
+- **Results CSV**: `results/<dataset>/qdrant_high_fidelity.csv` (e.g. `results/small/qdrant_high_fidelity.csv`)
+- **Live Schema Config**: `results/<dataset>/qdrant_collection_config.json`
+- **Canonical Benchmark Report**: [**`results/benchmark_results.md`**](../results/benchmark_results.md)
+

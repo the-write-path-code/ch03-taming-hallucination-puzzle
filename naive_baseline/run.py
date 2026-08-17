@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
-"""3.1 Naive baseline: truly dense-only retrieval.
+"""Stage 3.1: Naive Dense-Only Baseline.
 
-This script embeds the corpus and the evaluation queries with a single
-configurable dense embedding provider, ranks documents by cosine
-similarity, and writes naive_results.csv. It intentionally does not use
-BM25, BGE-M3 sparse weights, reranking, or Qdrant hybrid fusion -- the
-point of this stage is to show where dense-only retrieval fails.
-
-All provider selection and credentials come from retrieval_core.config,
-which reads a single .env file. See naive_baseline/README.md.
+Embeds documents and eval queries, ranks documents by cosine
+similarity, and writes results to results/<dataset>/naive_dense_only.csv.
 """
 
 from __future__ import annotations
@@ -33,7 +27,7 @@ from retrieval_core import (
 )
 from retrieval_core.config import DenseProviderConfig, load_dense_provider_config
 
-OUTPUT_PATH = Path(__file__).parent / "naive_results.csv"
+_repo_root = Path(__file__).parent.parent
 
 
 def _is_local_url(url: str) -> bool:
@@ -135,19 +129,14 @@ def rank_documents(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the 3.1 dense-only naive baseline.")
+    parser = argparse.ArgumentParser(description="Run the 3.1 naive dense baseline.")
     add_dataset_argument(parser)
-    parser.add_argument(
-        "--top-k",
-        type=int,
-        default=None,
-        help="Override RETRIEVAL_TOP_K from .env for this run.",
-    )
+    parser.add_argument("--top-k", type=int, default=None, help="Override RETRIEVAL_TOP_K.")
     parser.add_argument(
         "--output",
         type=Path,
-        default=OUTPUT_PATH,
-        help=f"Where to write results (default: {OUTPUT_PATH}).",
+        default=None,
+        help="Where to write results CSV (default: results/<dataset>/naive_dense_only.csv).",
     )
     return parser.parse_args()
 
@@ -158,6 +147,12 @@ def main() -> None:
     top_k = args.top_k if args.top_k is not None else config.top_k
 
     dataset_paths = resolve_dataset(args.dataset)
+    output_path = (
+        args.output
+        if args.output is not None
+        else _repo_root / "results" / args.dataset / "naive_dense_only.csv"
+    )
+
     documents = load_corpus(dataset_paths.corpus_dir)
     queries = load_eval_queries(dataset_paths.eval_queries_path)
     validate_against_corpus(queries, {doc.doc_id for doc in documents})
@@ -179,18 +174,14 @@ def main() -> None:
         retrieved = rank_documents(query_vector, doc_vectors, top_k)
         results.append(build_result(eval_query, retrieved, method=method, k=top_k))
 
-    write_results_csv(results, args.output)
+    write_results_csv(results, output_path)
     stats = summarize(results)
-    summary_md = render_summary_markdown(
-        results, dataset_name=args.dataset, method=method, k=top_k
-    )
-    summary_path = args.output.with_suffix(".md")
-    summary_path.write_text(summary_md, encoding="utf-8")
 
     print(
-        f"Wrote {stats['count']} results to {args.output} and summary to {summary_path}\n"
+        f"{method}: hit@1={stats['hit_at_1_rate']:.2f} "
+        f"hit@{top_k}={stats['hit_at_k_rate']:.2f} (n={stats['count']})"
     )
-    print(summary_md)
+    print(f"Wrote {len(results)} rows to {output_path}.")
 
 
 if __name__ == "__main__":

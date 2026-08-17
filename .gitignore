@@ -5,3 +5,5 @@ __pycache__/
 .env
 .qdrant_local/
 sample_data/generated_large/
+qdrant_storage/
+*.egg-info/

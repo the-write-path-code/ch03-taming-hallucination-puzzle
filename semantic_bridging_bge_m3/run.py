@@ -1,20 +1,12 @@
 #!/usr/bin/env python3
-"""3.2 Semantic bridging with native local BGE-M3.
+"""Stage 3.2: Semantic bridging with native local BGE-M3.
 
 Encodes the corpus and queries with FlagEmbedding.BGEM3FlagModel,
 requesting dense vectors, sparse lexical weights, and ColBERT multi-vectors
-in a single pass. This is the only path in this repository that produces
-native BGE-M3 sparse and ColBERT signals; hosted providers (Ollama,
-OpenAI-compatible) used in naive_baseline/ can only return dense vectors.
+in a single pass.
 
-Writes one row per (query, method) pair to bge_m3_results.csv, with
-method in {bge_m3_dense, bge_m3_sparse, bge_m3_colbert, bge_m3_hybrid},
-so each representation's retrieval quality can be compared directly.
-
-HyDE query expansion is optional (--use-hyde) and off by default. Basic
-retrieval runs never require an LLM key; HyDE only activates with
-OPENAI_API_KEY set and --use-hyde passed, and falls back to the raw query
-with a clear message otherwise.
+Writes results to results/<dataset>/bge_m3_representations.csv, with
+method in {bge_m3_dense, bge_m3_sparse, bge_m3_colbert, bge_m3_hybrid}.
 """
 
 import argparse
@@ -43,7 +35,6 @@ try:
 except ImportError:
     from provider import BGEM3Encoding, BGEM3Provider
 
-OUTPUT_PATH = Path(__file__).parent / "bge_m3_results.csv"
 _hyde_warned = False
 
 
@@ -95,7 +86,12 @@ def parse_args() -> argparse.Namespace:
     )
     add_dataset_argument(parser)
     parser.add_argument("--top-k", type=int, default=None, help="Override RETRIEVAL_TOP_K.")
-    parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Where to write results CSV (default: results/<dataset>/bge_m3_representations.csv).",
+    )
     parser.add_argument(
         "--use-hyde",
         action="store_true",
@@ -111,6 +107,12 @@ def main() -> None:
     hyde_model = _get("HYDE_MODEL", "gpt-4o-mini")
 
     dataset_paths = resolve_dataset(args.dataset)
+    output_path = (
+        args.output
+        if args.output is not None
+        else _repo_root / "results" / args.dataset / "bge_m3_representations.csv"
+    )
+
     documents = load_corpus(dataset_paths.corpus_dir)
     queries = load_eval_queries(dataset_paths.eval_queries_path)
     validate_against_corpus(queries, {doc.doc_id for doc in documents})
@@ -165,58 +167,20 @@ def main() -> None:
             retrieved = rank(scores, top_k)
             all_results.append(build_result(eval_query, retrieved, method=method, k=top_k))
 
-    write_results_csv(all_results, args.output)
-
-    summary_lines = [
-        f"# BGE-M3 Semantic Bridging Benchmark: `{args.dataset}`",
-        "",
-        f"- **Dataset**: `{args.dataset}`",
-        f"- **Total Queries**: {len(queries)}",
-        f"- **Top-K Parameter**: k={top_k}",
-        f"- **HyDE Enabled**: {args.use_hyde}",
-        "",
-        "## Overall Representation Comparison",
-        "",
-        f"| Method / Representation | Queries | Hit@1 Rate | Hit@{top_k} Rate |",
-        "| :--- | :---: | :---: | :---: |",
-    ]
+    write_results_csv(all_results, output_path)
 
     methods = ("bge_m3_dense", "bge_m3_sparse", "bge_m3_colbert", "bge_m3_hybrid")
     for method in methods:
         subset = [r for r in all_results if r.method == method]
         stats = summarize(subset)
-        summary_lines.append(
-            f"| `{method}` | {stats['count']} | {stats['hit_at_1_rate']:.1%} | {stats['hit_at_k_rate']:.1%} |"
-        )
         print(
             f"{method}: hit@1={stats['hit_at_1_rate']:.2f} "
             f"hit@{top_k}={stats['hit_at_k_rate']:.2f} (n={stats['count']})"
         )
 
-    summary_lines.append("")
-    summary_lines.append("## Performance Breakdown by Failure Mode")
-    summary_lines.append("")
-
-    from retrieval_core.evaluation import summarize_by_failure_mode
-
-    # Aggregate by failure mode across methods
-    for method in methods:
-        subset = [r for r in all_results if r.method == method]
-        by_mode = summarize_by_failure_mode(subset)
-        summary_lines.append(f"### `{method}`")
-        summary_lines.append("")
-        summary_lines.append(f"| Failure Mode | Queries | Hit@1 Rate | Hit@{top_k} Rate |")
-        summary_lines.append("| :--- | :---: | :---: | :---: |")
-        for mode, stats in by_mode.items():
-            summary_lines.append(
-                f"| `{mode}` | {stats['count']} | {stats['hit_at_1_rate']:.1%} | {stats['hit_at_k_rate']:.1%} |"
-            )
-        summary_lines.append("")
-
-    summary_path = args.output.with_suffix(".md")
-    summary_path.write_text("\n".join(summary_lines), encoding="utf-8")
-    print(f"Wrote {len(all_results)} rows to {args.output} and summary to {summary_path}.")
+    print(f"Wrote {len(all_results)} rows to {output_path}.")
 
 
 if __name__ == "__main__":
     main()
+
