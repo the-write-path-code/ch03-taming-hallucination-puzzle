@@ -1,0 +1,30 @@
+[
+  {
+    "id": "q-001",
+    "query": "What does AX4-E117 mean?",
+    "expected_doc_ids": [
+      "product_atlas_gateway"
+    ],
+    "failure_mode": "keyword_exact_match",
+    "notes": "Exact fault identifier."
+  },
+  {
+    "id": "q-002",
+    "query": "Which Atlas module has a seven business day replacement lead time?",
+    "expected_doc_ids": [
+      "pricing_gateway"
+    ],
+    "failure_mode": "table_lookup",
+    "notes": "SKU-level table lookup."
+  },
+  {
+    "id": "q-003",
+    "query": "How do I fix the Nimbus optical drift alert?",
+    "expected_doc_ids": [
+      "product_nimbus_sensor"
+    ],
+    "failure_mode": "semantic_paraphrase",
+    "notes": "Paraphrases NSN-42."
+  },
+  {
+    
