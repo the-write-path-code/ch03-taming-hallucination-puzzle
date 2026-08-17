@@ -119,8 +119,8 @@ A key finding across Chapter 3 is that no single retrieval algorithm is sufficie
 
 ```mermaid
 flowchart LR
-    A["Entire Corpus (Thousands of Docs)"] -->|Stage 1: Fast Hybrid RSF (Dense + BM25)| B["Top 20-50 Candidates (High Recall ~90%+)"]
-    B -->|Stage 2: ColBERT Token MaxSim Rerank| C["Top 3 Context for LLM (High Precision)"]
+    A["Entire Corpus - Thousands of Docs"] -->|Stage 1: Fast Hybrid RSF - Dense + BM25| B["Top 20-50 Candidates High Recall ~90%+"]
+    B -->|Stage 2: ColBERT Token MaxSim Rerank| C["Top 3 Context for LLM - High Precision"]
 ```
 
 1. **Stage 1 (High-Recall Candidate Retrieval)**: Use **Relative Score Fusion (Dense + BM25/Sparse)** to scan the global corpus in milliseconds, ensuring the target document is within the top 20–50 finalists.
