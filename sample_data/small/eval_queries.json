@@ -10,6 +10,105 @@
   },
   {
     "id": "q-002",
+    "query": "How do I fix the Nimbus optical drift alert?",
+    "expected_doc_ids": [
+      "product_nimbus_sensor"
+    ],
+    "failure_mode": "semantic_paraphrase",
+    "notes": "Paraphrases NSN-42 calibration condition."
+  },
+  {
+    "id": "q-003",
+    "query": "What does alert HRD-9C03 indicate on the Helios Reader?",
+    "expected_doc_ids": [
+      "product_helios_reader"
+    ],
+    "failure_mode": "keyword_exact_match",
+    "notes": "Exact alert identifier."
+  },
+  {
+    "id": "q-004",
+    "query": "Which change ticket class is used to roll out the Orion Switch duplex negotiation fix, and why was the issue easy to overlook?",
+    "expected_doc_ids": [
+      "product_orion_switch"
+    ],
+    "failure_mode": "long_context",
+    "notes": "Relevant ticket class follows distractor context about the audit history."
+  },
+  {
+    "id": "q-005",
+    "query": "How many independent approvals does clause CC-17 require for a production change?",
+    "expected_doc_ids": [
+      "policy_change_control"
+    ],
+    "failure_mode": "keyword_exact_match",
+    "notes": "Exact policy clause identifier."
+  },
+  {
+    "id": "q-006",
+    "query": "How long must customer support attachments be retained under clause DR-44?",
+    "expected_doc_ids": [
+      "policy_data_retention"
+    ],
+    "failure_mode": "keyword_exact_match",
+    "notes": "Exact policy clause identifier."
+  },
+  {
+    "id": "q-007",
+    "query": "What does clause AR-12 require for privileged accounts?",
+    "expected_doc_ids": [
+      "policy_access_review"
+    ],
+    "failure_mode": "keyword_exact_match",
+    "notes": "Exact policy clause identifier."
+  },
+  {
+    "id": "q-008",
+    "query": "Which ticket prefix must be used for P1 incidents?",
+    "expected_doc_ids": [
+      "policy_incident_severity"
+    ],
+    "failure_mode": "keyword_exact_match",
+    "notes": "Exact severity ticket prefix."
+  },
+  {
+    "id": "q-009",
+    "query": "What is another name for certificate rollover in the operations runbooks?",
+    "expected_doc_ids": [
+      "operations_certificate_rotation"
+    ],
+    "failure_mode": "semantic_paraphrase",
+    "notes": "Paraphrases certificate rollover as identity renewal."
+  },
+  {
+    "id": "q-010",
+    "query": "After comparing collector queue depth and source timestamps, what distinguishes an ingestion delay from event loss?",
+    "expected_doc_ids": [
+      "operations_telemetry_gap"
+    ],
+    "failure_mode": "long_context",
+    "notes": "Diagnostic distinction appears after the shared first-step description."
+  },
+  {
+    "id": "q-011",
+    "query": "During a rollback, what must be preserved before the prior artifact is restored?",
+    "expected_doc_ids": [
+      "operations_release_rollback"
+    ],
+    "failure_mode": "long_context",
+    "notes": "Evidence-preservation detail follows the rollback precondition paragraph."
+  },
+  {
+    "id": "q-012",
+    "query": "What do support engineers mean by collecting the case fingerprint?",
+    "expected_doc_ids": [
+      "operations_support_triage"
+    ],
+    "failure_mode": "semantic_paraphrase",
+    "notes": "Paraphrases case fingerprint as triage intake details."
+  },
+  {
+    "id": "q-013",
     "query": "Which Atlas module has a seven business day replacement lead time?",
     "expected_doc_ids": [
       "pricing_gateway"
@@ -18,13 +117,30 @@
     "notes": "SKU-level table lookup."
   },
   {
-    "id": "q-003",
-    "query": "How do I fix the Nimbus optical drift alert?",
+    "id": "q-014",
+    "query": "What is the included response target for the Priority support plan?",
     "expected_doc_ids": [
-      "product_nimbus_sensor"
+      "pricing_support"
     ],
-    "failure_mode": "semantic_paraphrase",
-    "notes": "Paraphrases NSN-42."
+    "failure_mode": "table_lookup",
+    "notes": "Plan-level table lookup."
   },
   {
-    
+    "id": "q-015",
+    "query": "What optical reference drift percentage triggers the Nimbus calibration threshold?",
+    "expected_doc_ids": [
+      "spec_sensor"
+    ],
+    "failure_mode": "table_lookup",
+    "notes": "Attribute-value table lookup."
+  },
+  {
+    "id": "q-016",
+    "query": "What is the minimum retention period for Vault-B storage?",
+    "expected_doc_ids": [
+      "spec_storage"
+    ],
+    "failure_mode": "table_lookup",
+    "notes": "Tier-level table lookup."
+  }
+]
