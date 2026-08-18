@@ -2,8 +2,6 @@
 
 Source repository for Chapter 3 of *The Write Path*. This chapter covers how stronger retrieval design, semantic matching, and hybrid search reduce weak grounding and context failure in enterprise RAG systems.
 
-Companion article: *"Fact-Checking the Future: How BGE-M3 is Taming the RAG Hallucination Puzzle"* by Mohit Aggarwal.
-
 ---
 
 ## How to Navigate This Repository
