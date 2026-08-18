@@ -27,7 +27,9 @@ This report is the canonical narrative summary of retrieval evaluations across a
 
 ## Benchmark Results: Small Corpus (16 Documents, 16 Queries)
 
-On the small, relatively uniform corpus with minimal distractors, dense retrieval performs well, and lexical/sparse signals resolve the few remaining edge cases.
+On the small, relatively uniform corpus with minimal distractors, dense retrieval performs well, and lexical and sparse signals resolve the few remaining edge cases.
+
+*Note: In an earlier test execution, an artifact generated under an active demonstration filter recorded 25.0% recall. Re-indexing from a clean rebuild confirmed the corrected 93.8% dense and 100.0% ColBERT-reranked results below.*
 
 | Stage | Method / Representation | Total Queries | Hit@1 Rate | Hit@3 Rate | Key Characteristic |
 | :--- | :--- | :---: | :---: | :---: | :--- |
@@ -90,11 +92,11 @@ However, on `semantic_paraphrase` queries (where user questions use different vo
 ### 3. Why Raw-Score Averaging Fails (Stage 3.2 vs. Stage 3.3)
 In Stage 3.2, averaging raw cosine dense scores with raw sparse and ColBERT scores resulted in 93.8% Hit@1 on the small corpus, failing to improve upon dense alone even though standalone sparse and ColBERT both scored 100%. 
 
-Because raw score scales and distributions are incompatible across representations, unnormalized averaging allows one leg to dominate the composite score. Stage 3.3 resolves this by applying **Relative Score Fusion (RSF)**, which normalizes each leg independently to $[0, 1]$ before weighted summation.
+Because raw score scales and distributions are incompatible across representations, unnormalized averaging allows one leg to dominate the composite score. Stage 3.3 resolves this by applying **Relative Score Fusion (RSF)**, which normalizes each leg independently to a 0 to 1 range before weighted summation.
 
 ### 4. Relative Score Fusion vs. Reciprocal Rank Fusion
 On the 200-document dataset, **Relative Score Fusion (87.5% Hit@1)** outperformed **RRF (43.8% Hit@1)**. 
-- RRF considers only rank positions ($1 / (60 + \text{rank})$), treating a document that barely won dense retrieval with low confidence equally to a document that won BM25 with overwhelming confidence.
+- RRF considers only rank positions (calculated as 1 divided by 60 plus the rank position), treating a document that barely won dense retrieval with low confidence equally to a document that won BM25 with overwhelming confidence.
 - Relative Score Fusion preserves the magnitude of high-confidence lexical matches while integrating semantic signals.
 
 ### 5. Durable Qdrant Storage and ColBERT Latency Trade-Offs
@@ -104,27 +106,27 @@ On the 200-document dataset, **Relative Score Fusion (87.5% Hit@1)** outperforme
 
 ---
 
-## Architectural Synthesis: The Two-Stage Production Blueprint
+## Architectural Synthesis: Two-Stage Retrieval Pattern
 
-A key finding across Chapter 3 is that no single retrieval algorithm is sufficient for enterprise RAG on complex, long documents. High-fidelity retrieval relies on component synergy:
+On both corpora measured in this repository, no single retrieval method alone matched the accuracy of combining dense and lexical signals. High-fidelity retrieval relies on component synergy:
 
 | Component | What it Solves | Where it Fails Alone | Combined Benefit in Production |
 | :--- | :--- | :--- | :--- |
-| **Dense Vectors** | Broad semantic intent (e.g., *"thermal limit"* $\approx$ *"maximum operating temperature"*). | Fails on exact codes (`AX4-E117`), product SKUs, and isolated table rows. | Captures conceptual and paraphrase queries where exact vocabulary is unknown. |
+| **Dense Vectors** | Broad semantic intent (such as recognizing that "thermal limit" relates conceptually to "maximum operating temperature"). | Fails on exact codes (`AX4-E117`), product SKUs, and isolated table rows. | Captures conceptual and paraphrase queries where exact vocabulary is unknown. |
 | **Sparse / BM25** | Exact alphanumeric identifiers, table headers, and error codes. | Fails on synonyms, paraphrasing, and vocabulary mismatches. | Guarantees exact keyword matches and identifiers are never diluted. |
-| **Relative Score Fusion (RSF)** | Normalizes and balances dense and sparse scores without losing confidence margins. | N/A (algorithm, not a retriever). | **Takes large-corpus retrieval from 12.5% to 87.5% Hit@1.** |
-| **ColBERT (Late Interaction)** | Token-level MaxSim matching without compressing documents into a single vector. | Slower to compute across thousands of raw corpus documents. | **Acts as the ultimate precision tie-breaker** on top finalists, boosting Hit@3 by 2.5x. |
+| **Relative Score Fusion (RSF)** | Normalizes and balances dense and sparse scores without losing confidence margins. | N/A (algorithm, not a retriever). | Improves large-corpus retrieval from 12.5% to 87.5% Hit@1. |
+| **ColBERT (Late Interaction)** | Token-level MaxSim matching without compressing documents into a single vector. | Higher computation cost when evaluated across an entire raw corpus. | Acts as a precision reranker on the finalist candidate set, improving Hit@3 by 2.5x. |
 
-### The Recommended Two-Stage Funnel
+### Two-Stage Funnel Flow
 
 ```mermaid
 flowchart LR
-    A["Entire Corpus - Thousands of Docs"] -->|Stage 1: Fast Hybrid RSF - Dense + BM25| B["Top 20-50 Candidates High Recall ~90%+"]
-    B -->|Stage 2: ColBERT Token MaxSim Rerank| C["Top 3 Context for LLM - High Precision"]
+    A["Full 200-Document Corpus"] -->|Stage 1: Fast Hybrid RSF (Dense + BM25)| B["Top 20 to 50 Candidates"]
+    B -->|Stage 2: ColBERT Token MaxSim Rerank| C["Top 3 Context for LLM"]
 ```
 
-1. **Stage 1 (High-Recall Candidate Retrieval)**: Use **Relative Score Fusion (Dense + BM25/Sparse)** to scan the global corpus in milliseconds, ensuring the target document is within the top 20–50 finalists.
-2. **Stage 2 (High-Precision Reranking)**: Use **ColBERT token interaction** exclusively on those top 20–50 finalists to establish the exact rank order before feeding context to the LLM.
+1. **Stage 1 (Candidate Retrieval)**: Use **Relative Score Fusion (Dense + BM25/Sparse)** to scan the corpus in milliseconds, retrieving the top 20 to 50 finalists.
+2. **Stage 2 (Precision Reranking)**: Use **ColBERT token interaction** on those top candidate finalists to establish the exact rank order before feeding context to the LLM.
 
 ---
 

@@ -120,23 +120,24 @@ Empirical results measured on the 200-document stress-testing corpus:
 | :--- | :--- | :---: | :---: | :--- |
 | **3.1** | `dense_only:ollama` | 12.5% | 21.9% | Dense vectors fail on exact identifiers and isolated tables |
 | **3.3** | `bm25_only` | 84.4% | 87.5% | Strong lexical matching on rare alphanumeric codes |
-| **3.3** | `rrf_dense_bm25` | 43.8% | 62.5% | Pure rank fusion ($k=60$) |
+| **3.3** | `rrf_dense_bm25` | 43.8% | 62.5% | Pure rank fusion (k=60) |
 | **3.3** | `relative_score_dense_bm25` | **87.5%** | **90.6%** | Score-normalized fusion achieves highest retrieval fidelity |
 | **3.4** | `qdrant_dense` | 12.5% | 21.9% | First-stage persistent vector search (1.4 ms/query) |
 | **3.4** | `qdrant_dense_colbert_rerank` | **31.2%** | **56.2%** | Second-stage ColBERT reranking improves Hit@3 by 2.5x |
 
-### Component Synergy in Production RAG
+### Component Synergy in Retrieval
 
-| Component | What it Solves | Where it Fails Alone | Production Role |
+| Component | What it Solves | Where it Fails Alone | Practical Role |
 | :--- | :--- | :--- | :--- |
-| **Dense Vectors** | Conceptual meaning & paraphrasing | Misses exact identifiers and tables | First-stage semantic recall |
-| **Sparse / BM25** | Exact alphanumeric codes & tables | Misses synonyms & conceptual intent | First-stage lexical recall |
-| **Relative Score Fusion** | Normalizes & balances both legs | N/A (fusion algorithm) | **Unifies first-stage search (12.5% $\to$ 87.5% Hit@1)** |
-| **ColBERT Multi-Vectors** | Token-level MaxSim alignment | High latency across full corpus | **High-precision reranker on top finalists** |
+| **Dense Vectors** | Conceptual meaning and paraphrasing | Misses exact identifiers and tables | First-stage semantic recall |
+| **Sparse / BM25** | Exact alphanumeric codes and tables | Misses synonyms and conceptual intent | First-stage lexical recall |
+| **Relative Score Fusion** | Normalizes and balances both legs | N/A (fusion algorithm) | Unifies first-stage search (12.5% to 87.5% Hit@1) |
+| **ColBERT Multi-Vectors** | Token-level MaxSim alignment | High latency across full corpus | Precision reranker on top finalists |
 
-**The Production Blueprint**: Use **Relative Score Fusion (Dense + BM25)** for millisecond-fast candidate retrieval over the entire corpus, then apply **ColBERT token reranking** on the top 20–50 finalists to establish precision ranking before feeding context to the LLM.
+**Two-Stage Retrieval Pattern**: In this measured workflow, using **Relative Score Fusion (Dense + BM25)** provides fast candidate retrieval over the full corpus, while applying **ColBERT token reranking** on the top 20 to 50 finalists establishes precision ranking before passing context to an LLM.
 
 For full cross-stage benchmark tables and latency trade-offs, see [**`results/benchmark_results.md`**](results/benchmark_results.md).
 For detailed architecture flowcharts, see [**`docs/workflow.md`**](docs/workflow.md).
+
 
 

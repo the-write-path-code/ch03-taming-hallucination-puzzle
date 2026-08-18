@@ -125,9 +125,6 @@ def embed_dense_texts(texts: list[str], config: DenseProviderConfig) -> list[lis
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run Section 3.4 High-Fidelity Retrieval in Qdrant."
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Run Section 3.4 High-Fidelity Retrieval in Qdrant."
     )
     add_dataset_argument(parser)
     parser.add_argument("--top-k", type=int, default=None, help="Override RETRIEVAL_TOP_K.")
