@@ -44,8 +44,8 @@ uv run python semantic_bridging_bge_m3/run.py --dataset small --use-hyde
 ```
 
 If `--use-hyde` is passed without `OPENAI_API_KEY` set in `.env`, the script
-prints one clear message and falls back to the raw query for the entire run
--- it never fails or silently skips queries.
+prints one clear message and falls back to the raw query for the entire run,
+never failing or silently skipping queries.
 
 ## Configuration
 

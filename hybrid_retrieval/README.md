@@ -18,7 +18,7 @@ Why did this happen?
 - **Incompatible Score Scales**: Cosine similarities (dense), inner products / BM25 scores (sparse), and token MaxSim sums (ColBERT) have drastically different distributions, magnitudes, and variances.
 - **Score Dominance**: A large raw score from one leg can completely drown out subtle but critical discriminating signals from another leg unless scores are properly calibrated or combined via ranks.
 
-Hybrid retrieval solves this by either ignoring raw score magnitudes entirely (**RRF**) or normalizing each leg independently into $[0, 1]$ before weighting (**Relative Score Fusion**).
+Hybrid retrieval solves this by either ignoring raw score magnitudes entirely (**RRF**) or normalizing each leg independently into a 0 to 1 range before weighting (**Relative Score Fusion**).
 
 ---
 

@@ -45,7 +45,7 @@ Payload indexes (`KEYWORD`) are created for `document_type` and `failure_tags`.
 
 ## Second-Stage ColBERT Reranking
 
-Dense retrieval narrows hundreds or thousands of documents down to the top $M$ candidates (default 20). 
+Dense retrieval narrows the corpus down to the top M candidates (default 20). 
 
 When native `local-bge-m3` is available, `run.py` extracts token-level ColBERT multi-vectors for the query and candidates, computing fine-grained token-to-token MaxSim alignment:
 
