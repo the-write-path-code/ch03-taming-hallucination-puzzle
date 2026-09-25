@@ -9,6 +9,7 @@ This document provides architectural flowcharts and execution diagrams for each 
 The chapter is structured in four progressive stages. Each stage isolates a specific retrieval concept or addresses a concrete failure mode identified in the preceding step before storing results in a single consolidated directory.
 
 ```mermaid
+%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
 flowchart LR
     A["Synthetic Data (Small / Large)"] --> B["Stage 3.1: Dense-Only Baseline"]
     B --> C["Stage 3.2: BGE-M3 Multi-Representation"]
@@ -29,6 +30,7 @@ flowchart LR
 The evaluation pipeline supports both a small committed test dataset and a large synthetic stress-testing corpus generated deterministically on local machines.
 
 ```mermaid
+%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
 flowchart TD
     subgraph Datasets ["Dataset Sources"]
         S1["sample_data/small/ (Committed)"]
@@ -71,6 +73,7 @@ The large corpus contains 200 documents and 32 labeled queries. It is excluded f
 Dense-only retrieval embeds documents and queries into fixed-size semantic vectors. The diagram below illustrates how configuration flows into embedding generation and highlights the primary failure modes.
 
 ```mermaid
+%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
 flowchart TD
     Env[".env (DENSE_PROVIDER: ollama / openai / local-bge-m3)"] --> Cfg["retrieval_core.config"]
     Cfg --> Embed["embed_texts()"]
@@ -103,6 +106,7 @@ flowchart TD
 Native BGE-M3 generates three distinct representations in a single forward pass through `FlagEmbedding`.
 
 ```mermaid
+%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
 flowchart TD
     Text["Input Text (Document or Query)"] --> Model["BGEM3FlagModel (FlagEmbedding)"]
     
@@ -128,6 +132,7 @@ flowchart TD
 Stage 3.3 decouples dense and sparse retrieval into independent legs and combines them using formal fusion algorithms.
 
 ```mermaid
+%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
 flowchart TD
     Q["Evaluation Query"] --> DLeg["Dense Leg (Cosine Similarity)"]
     Q --> SLeg["Sparse Leg (BM25 or BGE-M3 Sparse)"]
@@ -159,6 +164,7 @@ flowchart TD
 Stage 3.4 integrates persistent vector storage with payload metadata filtering and optional second-stage ColBERT reranking.
 
 ```mermaid
+%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
 flowchart TD
     subgraph ClientFactory ["Single Connection Abstraction (client.py)"]
         EnvQ[".env Settings"] --> CF["get_qdrant_client()"]
@@ -189,6 +195,7 @@ flowchart TD
 All user-configurable options are centralized in the root `.env` file and loaded through `retrieval_core.config`. Application code never reads `os.environ` directly.
 
 ```mermaid
+%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
 flowchart TD
     DotEnv[".env File (Root)"] --> Loader["src/retrieval_core/config.py"]
     
