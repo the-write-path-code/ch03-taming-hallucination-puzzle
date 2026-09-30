@@ -73,9 +73,9 @@ The large corpus contains 200 documents and 32 labeled queries. It is excluded f
 Dense-only retrieval embeds documents and queries into fixed-size semantic vectors. The diagram below illustrates how configuration flows into embedding generation and highlights the primary failure modes.
 
 ```mermaid
-%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "22px", "primaryTextColor": "#000000", "lineColor": "#4B5563"}}}%%
 flowchart TD
-    Env[".env (DENSE_PROVIDER: ollama / openai / local-bge-m3)"] --> Cfg["retrieval_core.config"]
+    Env[".env (DENSE_PROVIDER)"] --> Cfg["retrieval_core.config"]
     Cfg --> Embed["embed_texts()"]
     
     Docs["Corpus Documents"] --> Embed
@@ -91,12 +91,24 @@ flowchart TD
     Rank --> Eval["Hit@K Evaluation"]
     
     subgraph Failures ["Known Dense-Only Failure Modes"]
-        F1["Exact Identifiers (e.g. AX4-E117) - Diluted in embedding space"]
-        F2["Table Lookups - Lack surrounding prose context"]
-        F3["Long Context - Target facts buried in 1,000+ words"]
+        F1["Exact Identifiers (e.g. AX4-E117) &mdash; Diluted in embedding space"]
+        F2["Table Lookups &mdash; Lack surrounding prose context"]
+        F3["Long Context &mdash; Target facts buried in 1,000+ words"]
     end
     
     Rank -.-> Failures
+
+    classDef cfgNode fill:#F3F4F6,stroke:#4B5563,color:#000000,stroke-width:1.5px
+    classDef procNode fill:#EBF5FF,stroke:#2563EB,color:#000000,stroke-width:1.5px
+    classDef scoreNode fill:#EDE9FE,stroke:#7C3AED,color:#000000,stroke-width:1.5px
+    classDef evalNode fill:#DCFCE7,stroke:#15803D,color:#000000,stroke-width:1.5px
+    classDef failNode fill:#FEE2E2,stroke:#DC2626,color:#000000,stroke-width:1.5px
+
+    class Env,Cfg cfgNode
+    class Docs,Query,Embed,DocVecs,QVec procNode
+    class CosSim,Rank scoreNode
+    class Eval evalNode
+    class F1,F2,F3 failNode
 ```
 
 ---
@@ -106,23 +118,37 @@ flowchart TD
 Native BGE-M3 generates three distinct representations in a single forward pass through `FlagEmbedding`.
 
 ```mermaid
-%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "15px", "primaryTextColor": "#000000", "lineColor": "#4B5563"}}}%%
 flowchart TD
     Text["Input Text (Document or Query)"] --> Model["BGEM3FlagModel (FlagEmbedding)"]
     
-    Model --> V1["Dense Vector (1024-dim)"]
-    Model --> V2["Sparse Lexical Weights (Token Dictionary)"]
-    Model --> V3["ColBERT Multi-Vectors (seq_len x 1024)"]
+    Model --> V1["Dense Vector<br/>(1024-dim)"]
+    Model --> V2["Sparse Lexical Weights<br/>(Token Dictionary)"]
+    Model --> V3["ColBERT Multi-Vectors<br/>(seq_len &times; 1024)"]
     
-    V1 --> S1["Dense Cosine Score"]
-    V2 --> S2["Lexical Matching Score (score_sparse)"]
-    V3 --> S3["ColBERT MaxSim Score (score_colbert)"]
+    V1 --> S1["Dense Cosine<br/>Score"]
+    V2 --> S2["Lexical Matching<br/>Score (score_sparse)"]
+    V3 --> S3["ColBERT MaxSim<br/>Score (score_colbert)"]
     
     S1 --> RawAvg["Raw Score Equal-Weight Average (bge_m3_hybrid)"]
     S2 --> RawAvg
     S3 --> RawAvg
     
     RawAvg --> Note["Note: Raw score scales are uncalibrated; motivated Stage 3.3"]
+
+    classDef inputNode fill:#F3F4F6,stroke:#4B5563,color:#000000,stroke-width:1.5px
+    classDef modelNode fill:#EDE9FE,stroke:#7C3AED,color:#000000,stroke-width:1.5px
+    classDef repNode fill:#EBF5FF,stroke:#2563EB,color:#000000,stroke-width:1.5px
+    classDef scoreNode fill:#FEF9C3,stroke:#CA8A04,color:#000000,stroke-width:1.5px
+    classDef avgNode fill:#DCFCE7,stroke:#15803D,color:#000000,stroke-width:1.5px
+    classDef noteNode fill:#FFFBEB,stroke:#D97706,color:#000000,stroke-width:1.5px
+
+    class Text inputNode
+    class Model modelNode
+    class V1,V2,V3 repNode
+    class S1,S2,S3 scoreNode
+    class RawAvg avgNode
+    class Note noteNode
 ```
 
 ---
@@ -132,29 +158,43 @@ flowchart TD
 Stage 3.3 decouples dense and sparse retrieval into independent legs and combines them using formal fusion algorithms.
 
 ```mermaid
-%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "28px", "primaryTextColor": "#000000", "lineColor": "#4B5563"}}}%%
 flowchart TD
-    Q["Evaluation Query"] --> DLeg["Dense Leg (Cosine Similarity)"]
-    Q --> SLeg["Sparse Leg (BM25 or BGE-M3 Sparse)"]
+    Q["Evaluation Query"] --> DLeg["Dense Leg<br/>(Cosine Sim)"]
+    Q --> SLeg["Sparse Leg<br/>(BM25 / Sparse)"]
     
-    DLeg --> DScore["Dense Score Map / Ranks"]
-    SLeg --> SScore["Sparse Score Map / Ranks"]
+    DLeg --> DScore["Dense Score<br/>Map & Ranks"]
+    SLeg --> SScore["Sparse Score<br/>Map & Ranks"]
     
-    DScore --> RRF["Reciprocal Rank Fusion (RRF)"]
+    DScore --> RRF["Reciprocal Rank<br/>Fusion (RRF)"]
     SScore --> RRF
     
-    DScore --> RSF["Relative Score Fusion (RSF)"]
+    DScore --> RSF["Relative Score<br/>Fusion (RSF)"]
     SScore --> RSF
     
-    subgraph Normalization ["RSF Min-Max Normalization"]
-        N1["Dense: (score - min) / (max - min)"]
-        N2["Sparse: (score - min) / (max - min)"]
+    subgraph Normalization ["RSF Score Normalization"]
+        N1["Dense: (s &minus; min)<br/>/ (max &minus; min)"]
+        N2["Sparse: (s &minus; min)<br/>/ (max &minus; min)"]
     end
     
     RSF --- Normalization
     
-    RRF --> Out1["rrf_dense_bm25 results"]
-    RSF --> Out2["relative_score_dense_bm25 results"]
+    RRF --> Out1["rrf_dense_bm25<br/>results"]
+    RSF --> Out2["relative_score_<br/>dense_bm25 results"]
+
+    classDef inputNode fill:#F3F4F6,stroke:#4B5563,color:#000000,stroke-width:1.5px
+    classDef legNode fill:#EBF5FF,stroke:#2563EB,color:#000000,stroke-width:1.5px
+    classDef scoreNode fill:#EDE9FE,stroke:#7C3AED,color:#000000,stroke-width:1.5px
+    classDef fusionNode fill:#FEF3C7,stroke:#D97706,color:#000000,stroke-width:1.5px
+    classDef normNode fill:#FEF9C3,stroke:#CA8A04,color:#000000,stroke-width:1.5px
+    classDef outNode fill:#DCFCE7,stroke:#15803D,color:#000000,stroke-width:1.5px
+
+    class Q inputNode
+    class DLeg,SLeg legNode
+    class DScore,SScore scoreNode
+    class RRF,RSF fusionNode
+    class N1,N2 normNode
+    class Out1,Out2 outNode
 ```
 
 ---
@@ -164,28 +204,53 @@ flowchart TD
 Stage 3.4 integrates persistent vector storage with payload metadata filtering and optional second-stage ColBERT reranking.
 
 ```mermaid
-%%{init: {"theme": "neutral", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "11px", "actorFontSize": "11px", "noteFontSize": "10px", "messageFontSize": "10px"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif", "fontSize": "48px", "primaryTextColor": "#000000", "lineColor": "#4B5563"}}}%%
 flowchart TD
     subgraph ClientFactory ["Single Connection Abstraction (client.py)"]
+        direction TB
         EnvQ[".env Settings"] --> CF["get_qdrant_client()"]
-        CF -->|QDRANT_URL unset| Emb["Embedded Local Qdrant (./.qdrant_local)"]
-        CF -->|QDRANT_URL set| Rem["Remote Docker / Qdrant Cloud"]
+        CF -->|QDRANT_URL unset| Emb["Embedded Local Qdrant<br/>(./.qdrant_local)"]
+        CF -->|QDRANT_URL set| Rem["Remote Docker /<br/>Qdrant Cloud"]
     end
 
     subgraph Collection ["Collection & Schema (collection.py)"]
-        Docs["Corpus Documents"] --> PGen["Generate Points (dense vector + metadata)"]
-        PGen --> Col["Qdrant Collection (named 'dense' vector)"]
-        Col --> Idx["Payload Indexes (document_type, failure_tags)"]
+        direction TB
+        Docs["Corpus Documents"] --> PGen["Generate Points<br/>(dense vector + metadata)"]
+        PGen --> Col["Qdrant Collection<br/>(named 'dense' vector)"]
+        Col --> Idx["Payload Indexes<br/>(document_type, failure_tags)"]
     end
 
     subgraph Search ["Two-Stage Retrieval (run.py)"]
-        Q["Query"] --> QSearch["client.query_points()"]
-        Flt["Optional Filter (document_type / failure_tags)"] --> QSearch
-        QSearch --> Cand["Top 20 Finalist Candidates (qdrant_dense)"]
-        Cand --> RerankCheck{"local-bge-m3 available?"}
-        RerankCheck -->|Yes| ColBERT["ColBERT Token MaxSim Rerank (qdrant_dense_colbert_rerank)"]
-        RerankCheck -->|No| Skip["Skip Reranking"]
+        direction LR
+        subgraph Stage1 ["First-Stage Retrieval"]
+            direction TB
+            Q["Query"] --> QSearch["client.query_points()"]
+            Flt["Optional Filter<br/>(document_type / failure_tags)"] --> QSearch
+            QSearch --> Cand["Top 20 Finalist Candidates<br/>(qdrant_dense)"]
+        end
+        subgraph Stage2 ["Second-Stage Precision Rerank"]
+            direction TB
+            RerankCheck{"local-bge-m3<br/>available?"}
+            RerankCheck -->|Yes| ColBERT["ColBERT Token MaxSim Rerank<br/>(qdrant_dense_colbert_rerank)"]
+            RerankCheck -->|No| Skip["Skip Reranking"]
+        end
+        Stage1 --> Stage2
     end
+
+    ClientFactory --> Search
+    Collection --> Search
+
+    classDef clientNode fill:#EBF5FF,stroke:#2563EB,color:#000000,stroke-width:1.5px
+    classDef colNode fill:#EDE9FE,stroke:#7C3AED,color:#000000,stroke-width:1.5px
+    classDef searchNode fill:#FEF3C7,stroke:#D97706,color:#000000,stroke-width:1.5px
+    classDef decision fill:#FEF9C3,stroke:#CA8A04,color:#000000,stroke-width:1.5px
+    classDef rerankNode fill:#DCFCE7,stroke:#15803D,color:#000000,stroke-width:1.5px
+
+    class EnvQ,CF,Emb,Rem clientNode
+    class Docs,PGen,Col,Idx colNode
+    class Q,Flt,QSearch,Cand searchNode
+    class RerankCheck decision
+    class ColBERT,Skip rerankNode
 ```
 
 ---
