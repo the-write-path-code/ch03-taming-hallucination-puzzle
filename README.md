@@ -2,7 +2,7 @@
 
 Companion code for *Building Safe Agentic AI for Enterprise Systems* by Mohit Aggarwal.
 
-This repository measures how retrieval design affects the evidence available to a retrieval-augmented generation (RAG) system. It begins with dense-only retrieval, then adds BGE-M3 multi-representation retrieval, explicit dense-and-sparse fusion, and persistent Qdrant retrieval with optional reranking.
+This repository measures how retrieval design affects the evidence available to a retrieval-augmented generation (RAG) system. It begins with dense-only retrieval, then adds BGE-M3 multi-representation retrieval, explicit dense-and-sparse fusion, and persistent Qdrant retrieval with optional reranking. You can also explore the chapter's [interactive workflow diagrams](#architecture-and-workflow-diagrams) directly in your browser.
 
 The repository does not generate a final answer or decide whether an answer is safe to deliver. It ranks documents and measures whether the expected source appears in the returned results. Chapter 4 adds the evaluation and policy gates that turn retrieval evidence into an answer decision.
 
@@ -269,15 +269,35 @@ The tests cover shared corpus loading, result schemas, score fusion, boundary co
 ├── results/
 │   ├── benchmark_results.md           # Canonical benchmark narrative
 │   └── README.md                      # Result schema and reproduction commands
-├── docs/
-│   ├── workflow.md                    # Retrieval architecture diagrams
+├── workflow/                          # Workflow documentation and interactive HTML diagrams
+│   ├── 01_stage_progression.html
+│   ├── 02_dataset_eval_lifecycle.html
+│   ├── 03_dense_retrieval_baseline.html
+│   ├── 04_bge_m3_multi_representation.html
+│   ├── 05_hybrid_retrieval_fusion.html
+│   ├── 06_qdrant_retrieval_pipeline.html
+│   ├── 07_configuration_flow.html
+│   ├── workflow.md                    # Retrieval architecture and stage details
 │   └── further_reading.md             # Tool and retrieval references
 └── tests/
 ```
 
-## Architecture Diagrams and Supporting Documents
+<a id="architecture-and-workflow-diagrams"></a>
+## Architecture and Workflow Diagrams
 
-- `docs/workflow.md` contains the dense-only, BGE-M3, hybrid-fusion, Qdrant, and configuration-ownership diagrams used in Chapter 3.
+The `workflow/` directory contains interactive HTML diagrams alongside supporting Markdown documents (`workflow.md` and `further_reading.md`) that detail the retrieval architecture, multi-representation mechanics, hybrid fusion, and Qdrant integration explored in Chapter 3:
+
+- [`01_stage_progression.html`](https://the-write-path-code.github.io/ch03-taming-hallucination-puzzle/workflow/01_stage_progression.html) shows the progression across the chapter's four retrieval stages and how each addresses specific failure modes.
+- [`02_dataset_eval_lifecycle.html`](https://the-write-path-code.github.io/ch03-taming-hallucination-puzzle/workflow/02_dataset_eval_lifecycle.html) shows the end-to-end dataset generation, query labeling, and evaluation benchmark pipeline.
+- [`03_dense_retrieval_baseline.html`](https://the-write-path-code.github.io/ch03-taming-hallucination-puzzle/workflow/03_dense_retrieval_baseline.html) shows the Stage 3.1 dense-only baseline and the four failure modes (exact IDs, paraphrases, long context, and tables).
+- [`04_bge_m3_multi_representation.html`](https://the-write-path-code.github.io/ch03-taming-hallucination-puzzle/workflow/04_bge_m3_multi_representation.html) shows the Stage 3.2 BGE-M3 multi-representation flow generating dense, sparse, and ColBERT multi-vectors.
+- [`05_hybrid_retrieval_fusion.html`](https://the-write-path-code.github.io/ch03-taming-hallucination-puzzle/workflow/05_hybrid_retrieval_fusion.html) shows Stage 3.3 independent dense and sparse retrieval legs combined via RRF and Relative Score Fusion (RSF).
+- [`06_qdrant_retrieval_pipeline.html`](https://the-write-path-code.github.io/ch03-taming-hallucination-puzzle/workflow/06_qdrant_retrieval_pipeline.html) shows the Stage 3.4 persistent Qdrant deployment, payload metadata filtering, and two-stage ColBERT reranking.
+- [`07_configuration_flow.html`](https://the-write-path-code.github.io/ch03-taming-hallucination-puzzle/workflow/07_configuration_flow.html) shows the centralized configuration ownership flowing from root `.env` through `retrieval_core.config` to all runtime stages.
+
+The interactive `.html` files in `workflow/` can be opened directly in your browser using the links above (hosted via GitHub Pages with pan, zoom, dark/light theme, and animation support), or opened locally in any modern browser. The accompanying Markdown documents in `workflow/` render the original Mermaid diagrams directly on GitHub.
+
+For stage-specific documentation and narratives:
 - `naive_baseline/README.md` explains the dense-only failure modes.
 - `semantic_bridging_bge_m3/README.md` explains the three BGE-M3 representations and why this stage needs the optional local extra.
 - `hybrid_retrieval/README.md` explains RRF and relative score fusion.
